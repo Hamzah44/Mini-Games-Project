@@ -108,7 +108,7 @@
             border-radius:20px;
             padding:0; overflow:hidden; pointer-events:none;
             opacity:0; transition:opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            z-index:20;
+            z-index:150;
         }
         #fact-card.show { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
         #fact-card.wrong-tag { border-color:rgba(255, 42, 74, 0.4); box-shadow: 0 12px 40px rgba(255, 42, 74, 0.2); }
@@ -384,12 +384,17 @@
             text-align: center;
             min-width: 90px;
             transition: all 0.2s;
+            cursor: pointer;
         }
 
         .collection-item:hover {
             background: rgba(0, 240, 255, 0.1);
             border-color: var(--bio-cyan);
             transform: translateY(-2px);
+        }
+        
+        .collection-item:active {
+            transform: translateY(0) scale(0.95);
         }
 
         .ci-icon {
@@ -421,6 +426,37 @@
             from { transform: scale(1); text-shadow: 0 0 10px rgba(0, 255, 136, 0.5); }
             to { transform: scale(1.05); text-shadow: 0 0 20px rgba(0, 255, 136, 0.9); }
         }
+
+        /* ── ANIMAL MODAL (Victory Screen details) ── */
+        #animalModal {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -40%) scale(0.9);
+            width: min(90vw, 380px);
+            z-index: 300;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: rgba(5, 12, 26, 0.95);
+            border: 1px solid var(--bio-cyan);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 30px rgba(0, 240, 255, 0.15);
+            padding: clamp(1rem, 2.5vh, 1.5rem);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        #animalModal.show {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .am-header { display: flex; align-items: center; gap: 15px; }
+        .am-icon { font-size: 2.5rem; background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 12px; width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; filter: drop-shadow(0 0 10px rgba(0,240,255,0.4)); flex-shrink: 0;}
+        .am-title-box { display: flex; flex-direction: column; text-align: left; }
+        .am-name { font-family: 'Orbitron', monospace; font-size: clamp(0.9rem, 2vh, 1.1rem); font-weight: 800; color: var(--bio-cyan); text-transform: uppercase; letter-spacing: 1px; }
+        .am-class { font-size: clamp(0.55rem, 1.2vh, 0.65rem); color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 2px; margin-top: 4px; font-weight: 600; }
+        .am-body { font-size: clamp(0.75rem, 1.8vh, 0.85rem); line-height: 1.5; color: rgba(230, 245, 255, 0.9); font-weight: 300; text-align: left; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 10px; border: 1px solid rgba(0, 240, 255, 0.1); }
 
         /* ── LEVEL CLEAR ── */
         .zone-cleared-title { 
@@ -775,6 +811,19 @@
         <button class="btn victory-btn" id="playAgainBtn">🌊 DIVE AGAIN</button>
     </div>
 
+    <!-- Animal Detail Modal (Victory Screen) -->
+    <div id="animalModal" class="glass-panel">
+        <div class="am-header">
+            <div class="am-icon" id="am-icon">🐬</div>
+            <div class="am-title-box">
+                <div class="am-name" id="am-name">Dolphin</div>
+                <div class="am-class" id="am-class">Cetacean · Mammal</div>
+            </div>
+        </div>
+        <div class="am-body" id="am-fact">Fact goes here.</div>
+        <button class="btn" id="closeModalBtn" style="width: 100%; padding: 0.8rem; font-size: 0.8rem;">CLOSE DATA</button>
+    </div>
+
 </div>
 <script>
 // ──────────────────────────────────────────────
@@ -801,10 +850,29 @@ const o2RefillEl   = document.getElementById('o2-refill');
 const surfaceIndicator = document.getElementById('surface-indicator');
 const depthMeter   = document.getElementById('depth-meter');
 
+const animalModal  = document.getElementById('animalModal');
+const amIcon       = document.getElementById('am-icon');
+const amName       = document.getElementById('am-name');
+const amClass      = document.getElementById('am-class');
+const amFact       = document.getElementById('am-fact');
+
 document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('nextLevelBtn').addEventListener('click', startNextLevel);
 document.getElementById('restartBtn').addEventListener('click', startGame);
 document.getElementById('playAgainBtn').addEventListener('click', startGame);
+
+document.getElementById('closeModalBtn').addEventListener('click', () => {
+    animalModal.classList.remove('show');
+});
+
+function showAnimalModal(creature) {
+    amIcon.textContent = creature.emoji;
+    amName.textContent = creature.name;
+    amClass.textContent = creature.classLabel;
+    amFact.textContent = creature.fact;
+    playSound('tag'); // Provides a satisfying beep when opening
+    animalModal.classList.add('show');
+}
 
 // ──────────────────────────────────────────────
 //  AUDIO
@@ -922,7 +990,21 @@ let joystick={active:false,x:0,y:0};
 let joystickStart={x:0,y:0};
 let keys={w:false,a:false,s:false,d:false,ArrowUp:false,ArrowLeft:false,ArrowDown:false,ArrowRight:false};
 
-window.addEventListener('keydown',e=>{if(e.key in keys){keys[e.key]=true;e.preventDefault();}});
+window.addEventListener('keydown',e=>{
+    if(e.key in keys){keys[e.key]=true;e.preventDefault();}
+    
+    // 🤫 DEV CHEAT CODE: Press 'Ctrl + Shift + V' to instantly win the game and unlock all data
+    if(e.key.toLowerCase() === 'v' && e.ctrlKey && e.shiftKey && gameState === 'playing') {
+        // Fill the catalogue with every animal to test the Victory Grid
+        creatureDB.forEach(c => { 
+            if(!allTaggedEver.find(x => x.name === c.name)) allTaggedEver.push(c); 
+        });
+        totalScore += 9999;
+        mistakesMade = 0; // Guarantee flawless bonus
+        currentLevel = levels.length - 1; // Trick the game into thinking you just beat the last level
+        levelComplete();
+    }
+});
 window.addEventListener('keyup',e=>{if(e.key in keys)keys[e.key]=false;});
 
 // ──────────────────────────────────────────────
@@ -1142,24 +1224,39 @@ function showO2Refill(){
 }
 
 let factHideTm=null;
-function showFactCard(creature,isCorrect){
+function showFactCard(creature, status){
     document.getElementById('fc-icon').textContent=creature.emoji;
     document.getElementById('fc-name').textContent=creature.name;
     document.getElementById('fc-class').textContent=creature.classLabel;
     document.getElementById('fc-body').textContent=creature.fact;
     const tag=document.getElementById('fc-tag'), hdr=document.getElementById('fc-header');
-    if(isCorrect){
+    
+    factCard.classList.remove('wrong-tag', 'info-tag');
+    hdr.classList.remove('wrong-header', 'info-header');
+    tag.className = 'fact-tag';
+
+    if(status === true){
         tag.textContent='✔ TARGET SECURED — O₂ REFILLED';
-        tag.className='fact-tag tag-green';
-        factCard.classList.remove('wrong-tag'); hdr.classList.remove('wrong-header');
-    }else{
+        tag.classList.add('tag-green');
+    }else if(status === false){
         tag.textContent='✘ WRONG SPECIES — O₂ PENALTY';
-        tag.className='fact-tag tag-red';
-        factCard.classList.add('wrong-tag'); hdr.classList.add('wrong-header');
+        tag.classList.add('tag-red');
+        factCard.classList.add('wrong-tag'); 
+        hdr.classList.add('wrong-header');
+    }else if(status === 'info'){
+        tag.textContent='ℹ SPECIES DATA ARCHIVED';
+        tag.classList.add('tag-blue');
+        factCard.classList.add('info-tag'); 
+        hdr.classList.add('info-header');
     }
+
     factCard.classList.add('show');
     if(factHideTm)clearTimeout(factHideTm);
-    factHideTm=setTimeout(()=>{factCard.classList.remove('show');factCard.classList.remove('wrong-tag');hdr.classList.remove('wrong-header');},4500);
+    factHideTm=setTimeout(()=>{
+        factCard.classList.remove('show');
+        factCard.classList.remove('wrong-tag', 'info-tag');
+        hdr.classList.remove('wrong-header', 'info-header');
+    },4500);
 }
 
 function updateHUD(){
@@ -1214,7 +1311,7 @@ function buildReviewList(containerId, creatures){
 
 function buildVictoryGrid(containerId, creatures){
     const el = document.getElementById(containerId);
-    el.innerHTML = '<div style="font-family:Orbitron,monospace;font-size:clamp(0.5rem, 1.2vh, 0.6rem);font-weight:700;letter-spacing:4px;color:rgba(0,240,255,0.5);margin-bottom:12px;text-align:center;width:100%">FINAL CATALOGUE SECURED</div>';
+    el.innerHTML = '<div style="font-family:Orbitron,monospace;font-size:clamp(0.5rem, 1.2vh, 0.6rem);font-weight:700;letter-spacing:4px;color:rgba(0,240,255,0.5);margin-bottom:12px;text-align:center;width:100%">FINAL CATALOGUE SECURED<br><span style="font-size:0.45rem;color:#fff;opacity:0.6;margin-top:4px;display:block;cursor:pointer">(CLICK ANY ICON TO REVIEW DATA)</span></div>';
     
     const grid = document.createElement('div');
     grid.className = 'collection-grid';
@@ -1222,7 +1319,13 @@ function buildVictoryGrid(containerId, creatures){
     creatures.forEach(c => {
         const item = document.createElement('div');
         item.className = 'collection-item';
+        item.style.cursor = 'pointer';
         item.innerHTML = `<div class="ci-icon">${c.emoji}</div><div class="ci-name">${c.name}</div>`;
+        
+        item.addEventListener('click', () => {
+            showAnimalModal(c);
+        });
+
         grid.appendChild(item);
     });
     
@@ -1288,6 +1391,7 @@ function startGame(){
 
 function startNextLevel(){
     Object.values(screens).forEach(s=>s.classList.add('hidden'));
+    animalModal.classList.remove('show'); // Ensure modal hides on restart
     const lvl=levels[currentLevel];
     specimensTagged=0; requiredSpecimens=lvl.target; healthPct=100; oxygenPct=100; oxygenDrain=100/lvl.time; taggedThisLevel=[];
     generateWorld();
