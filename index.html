@@ -137,26 +137,49 @@
         }
 
         /* ── Score bar ── */
-        .score-bar {
+        /* ── Mood bar ── */
+        .mood-bar {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 24px;
+            gap: 10px;
             background: white;
-            border-radius: 99px;
-            padding: 10px 28px;
+            border-radius: 20px;
+            padding: 14px 24px 16px;
             margin: 24px auto 0;
             width: fit-content;
             box-shadow: 0 4px 20px rgba(45,34,96,0.08);
             font-family: 'Nunito', sans-serif;
             font-weight: 800;
-            font-size: 14px;
-            color: #2D2260;
+            font-size: 13px;
+            color: #7A6FA8;
             animation: popIn 0.6s 0.2s cubic-bezier(0.34,1.56,0.64,1) both;
         }
 
-        .score-item { display: flex; align-items: center; gap: 6px; }
-        .score-num { font-size: 20px; color: #FF6B35; }
+        .mood-label { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #B0A8D4; }
+
+        .mood-options { display: flex; gap: 8px; }
+
+        .mood-btn {
+            font-size: 26px;
+            background: #F5F3FF;
+            border: 2px solid transparent;
+            border-radius: 14px;
+            padding: 6px 10px;
+            cursor: pointer;
+            transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1), border-color 0.15s, background 0.15s;
+            line-height: 1;
+        }
+        .mood-btn:hover { transform: scale(1.18); background: #EDE9FF; }
+        .mood-btn.selected { border-color: #9B6AFF; background: #EDE9FF; transform: scale(1.15); }
+
+        .mood-msg {
+            font-size: 13px;
+            color: #9B6AFF;
+            font-weight: 700;
+            min-height: 18px;
+            transition: opacity 0.2s;
+        }
 
         /* ── Grid ── */
         .game-grid {
@@ -236,13 +259,23 @@
         }
         .game-card:hover .card-emoji { transform: scale(1.2) rotate(-5deg); }
 
-        /* Stars rating */
-        .card-stars {
-            display: flex; gap: 3px;
-            margin-top: 8px;
-            position: relative; z-index: 1;
+        /* Favourite heart */
+        .card-fav {
+            position: absolute;
+            top: 12px; right: 12px;
+            font-size: 22px;
+            background: rgba(255,255,255,0.35);
+            border: none;
+            border-radius: 50%;
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            z-index: 2;
+            transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), background 0.15s;
+            line-height: 1;
         }
-        .star-icon { font-size: 14px; }
+        .card-fav:hover { transform: scale(1.2); background: rgba(255,255,255,0.55); }
+        .card-fav.faved { transform: scale(1.15); }
 
         /* Card body */
         .card-body {
@@ -396,10 +429,16 @@
         </h1>
         <p class="subtitle">Choose a game and start playing 🚀</p>
 
-        <div class="score-bar">
-            <div class="score-item">🏆 <span>High Score:</span> <span class="score-num" id="highScore">0</span></div>
-            <div class="score-item">⭐ <span>Stars:</span> <span class="score-num" id="totalStars">0</span></div>
-            <div class="score-item">🎮 <span>Played:</span> <span class="score-num" id="gamesPlayed">0</span></div>
+        <div class="mood-bar">
+            <span class="mood-label">How are you feeling today?</span>
+            <div class="mood-options">
+                <button class="mood-btn" data-mood="happy"    data-msg="Awesome! Let's play! 🎉">😄</button>
+                <button class="mood-btn" data-mood="excited"  data-msg="Let's gooo! 🚀">🤩</button>
+                <button class="mood-btn" data-mood="curious"  data-msg="Time to explore! 🔍">🤔</button>
+                <button class="mood-btn" data-mood="tired"    data-msg="A game will wake you up! ☕">😴</button>
+                <button class="mood-btn" data-mood="silly"    data-msg="Hehe, let's be silly! 🤪">🤪</button>
+            </div>
+            <span class="mood-msg" id="moodMsg"></span>
         </div>
     </header>
 
@@ -410,12 +449,8 @@
 
         <div class="game-card card-anatomy" data-game="anatomy">
             <div class="card-band">
+                <button class="card-fav" data-game="anatomy" title="Add to favourites">🤍</button>
                 <div class="card-emoji">🦴</div>
-                <div class="card-stars">
-                    <span class="star-icon" data-game="anatomy" data-pos="0">⭐</span>
-                    <span class="star-icon" data-game="anatomy" data-pos="1">⭐</span>
-                    <span class="star-icon" data-game="anatomy" data-pos="2">⭐</span>
-                </div>
             </div>
             <div class="card-body">
                 <p class="card-name">Body Anatomy</p>
@@ -429,12 +464,8 @@
 
         <div class="game-card card-dive" data-game="dive">
             <div class="card-band">
+                <button class="card-fav" data-game="dive" title="Add to favourites">🤍</button>
                 <div class="card-emoji">🤿</div>
-                <div class="card-stars">
-                    <span class="star-icon" data-game="dive" data-pos="0">⭐</span>
-                    <span class="star-icon" data-game="dive" data-pos="1">⭐</span>
-                    <span class="star-icon" data-game="dive" data-pos="2">⭐</span>
-                </div>
             </div>
             <div class="card-body">
                 <p class="card-name">Deep Dive</p>
@@ -448,12 +479,8 @@
 
         <div class="game-card card-reaction" data-game="reaction">
             <div class="card-band">
+                <button class="card-fav" data-game="reaction" title="Add to favourites">🤍</button>
                 <div class="card-emoji">⚡</div>
-                <div class="card-stars">
-                    <span class="star-icon" data-game="reaction" data-pos="0">⭐</span>
-                    <span class="star-icon" data-game="reaction" data-pos="1">⭐</span>
-                    <span class="star-icon" data-game="reaction" data-pos="2">⭐</span>
-                </div>
             </div>
             <div class="card-body">
                 <p class="card-name">Reaction Lab</p>
@@ -467,12 +494,8 @@
 
         <div class="game-card card-robobug" data-game="robobug">
             <div class="card-band">
+                <button class="card-fav" data-game="robobug" title="Add to favourites">🤍</button>
                 <div class="card-emoji">🤖</div>
-                <div class="card-stars">
-                    <span class="star-icon" data-game="robobug" data-pos="0">⭐</span>
-                    <span class="star-icon" data-game="robobug" data-pos="1">⭐</span>
-                    <span class="star-icon" data-game="robobug" data-pos="2">⭐</span>
-                </div>
             </div>
             <div class="card-body">
                 <p class="card-name">RoboBug</p>
@@ -486,12 +509,8 @@
 
         <div class="game-card card-starspell" data-game="starspell">
             <div class="card-band">
+                <button class="card-fav" data-game="starspell" title="Add to favourites">🤍</button>
                 <div class="card-emoji">⭐</div>
-                <div class="card-stars">
-                    <span class="star-icon" data-game="starspell" data-pos="0">⭐</span>
-                    <span class="star-icon" data-game="starspell" data-pos="1">⭐</span>
-                    <span class="star-icon" data-game="starspell" data-pos="2">⭐</span>
-                </div>
             </div>
             <div class="card-body">
                 <p class="card-name">StarSpell</p>
@@ -509,69 +528,61 @@
 </div>
 
 <script>
-    /* ── Persist star ratings & stats in localStorage ── */
-    const STORE = 'mgHub';
-    function load() {
-        try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch(e) { return {}; }
-    }
+    const STORE = 'mgHub2';
+    function load() { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch(e) { return {}; } }
     function save(d) { localStorage.setItem(STORE, JSON.stringify(d)); }
 
     let data = load();
-    data.stars    = data.stars    || {};
-    data.played   = data.played   || 0;
-    data.highScore= data.highScore|| 0;
+    data.favs = data.favs || {};
+    data.mood = data.mood || null;
 
-    function countTotalStars() {
-        return Object.values(data.stars).reduce((s,v)=>s+v,0);
-    }
-
-    function renderStats() {
-        document.getElementById('highScore').textContent = data.highScore;
-        document.getElementById('totalStars').textContent = countTotalStars();
-        document.getElementById('gamesPlayed').textContent = data.played;
-    }
-
-    function renderCardStars() {
-        document.querySelectorAll('.card-stars').forEach(container => {
-            const game = container.closest('.game-card').dataset.game;
-            const earned = data.stars[game] || 0;
-            container.querySelectorAll('.star-icon').forEach((s,i) => {
-                s.textContent = i < earned ? '⭐' : '🌑';
-                s.style.opacity = i < earned ? '1' : '0.3';
-            });
+    /* ── Mood picker ── */
+    const moodMsg = document.getElementById('moodMsg');
+    function renderMood() {
+        document.querySelectorAll('.mood-btn').forEach(btn => {
+            btn.classList.toggle('selected', btn.dataset.mood === data.mood);
         });
+        const active = document.querySelector(`.mood-btn[data-mood="${data.mood}"]`);
+        moodMsg.textContent = active ? active.dataset.msg : '';
     }
 
-    /* Click on a star to rate */
-    document.querySelectorAll('.card-stars .star-icon').forEach(star => {
-        star.style.cursor = 'pointer';
-        star.addEventListener('click', e => {
-            e.preventDefault();
-            e.stopPropagation();
-            const game = star.dataset.game;
-            const pos  = parseInt(star.dataset.pos) + 1;
-            data.stars[game] = (data.stars[game] === pos) ? pos - 1 : pos;
+    document.querySelectorAll('.mood-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            data.mood = (data.mood === btn.dataset.mood) ? null : btn.dataset.mood;
             save(data);
-            renderCardStars();
-            renderStats();
-            burst(e.clientX, e.clientY, ['#FFD700','#FF6B35','#FFB800']);
+            renderMood();
+            burst(btn.getBoundingClientRect().left + 20, btn.getBoundingClientRect().top, ['#9B6AFF','#FFD700','#FF6B9D']);
         });
     });
 
-    /* Confetti burst on Play Now click */
+    /* ── Favourite hearts ── */
+    function renderFavs() {
+        document.querySelectorAll('.card-fav').forEach(btn => {
+            const g = btn.dataset.game;
+            const faved = !!data.favs[g];
+            btn.textContent = faved ? '❤️' : '🤍';
+            btn.classList.toggle('faved', faved);
+        });
+    }
+
+    document.querySelectorAll('.card-fav').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            const g = btn.dataset.game;
+            data.favs[g] = !data.favs[g];
+            save(data);
+            renderFavs();
+            if (data.favs[g]) burst(e.clientX, e.clientY, ['#FF6B9D','#FF4F4F','#FFD700']);
+        });
+    });
+
+    /* ── Confetti on Play Now ── */
     document.querySelectorAll('.card-play').forEach(btn => {
         btn.addEventListener('click', e => {
-            const card = btn.closest('.game-card');
-            const game = card.dataset.game;
-            data.played++;
-            const rand = Math.floor(Math.random()*51)+50;
-            if (rand > data.highScore) data.highScore = rand;
-            save(data);
-            renderStats();
+            const colors = { anatomy:'#FFB800', dive:'#00C8C8', reaction:'#FF4F4F', robobug:'#3DC96E', starspell:'#9B6AFF' };
+            const game = btn.closest('.game-card').dataset.game;
             const r = btn.getBoundingClientRect();
-            const colors = {
-                anatomy:'#FFB800',dive:'#00C8C8',reaction:'#FF4F4F',robobug:'#3DC96E',starspell:'#9B6AFF'
-            };
             burst(r.left + r.width/2, r.top, ['#fff', colors[game], '#FFD700']);
         });
     });
@@ -580,33 +591,20 @@
         for (let i = 0; i < 18; i++) {
             const el = document.createElement('div');
             el.className = 'confetti-piece';
-            el.style.cssText = `
-                left:${x + (Math.random()-0.5)*80}px;
-                top:${y}px;
-                background:${colors[Math.floor(Math.random()*colors.length)]};
-                border-radius:${Math.random()>0.5?'50%':'3px'};
-                width:${6+Math.random()*8}px;
-                height:${6+Math.random()*8}px;
-                animation-duration:${0.6+Math.random()*0.6}s;
-                animation-delay:${Math.random()*0.1}s;
-            `;
+            el.style.cssText = `left:${x+(Math.random()-.5)*80}px;top:${y}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>.5?'50%':'3px'};width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;animation-duration:${0.6+Math.random()*.6}s;animation-delay:${Math.random()*.1}s;`;
             document.body.appendChild(el);
             el.addEventListener('animationend', () => el.remove());
         }
     }
 
-    /* Wobble on hover for emojis */
+    /* Emoji stop wiggle on hover */
     document.querySelectorAll('.game-card').forEach(card => {
-        card.addEventListener('mouseenter', () => {
-            card.querySelector('.card-emoji').style.animation = 'none';
-        });
-        card.addEventListener('mouseleave', () => {
-            card.querySelector('.card-emoji').style.animation = '';
-        });
+        card.addEventListener('mouseenter', () => card.querySelector('.card-emoji').style.animation = 'none');
+        card.addEventListener('mouseleave', () => card.querySelector('.card-emoji').style.animation = '');
     });
 
-    renderCardStars();
-    renderStats();
+    renderMood();
+    renderFavs();
 </script>
 </body>
 </html>
