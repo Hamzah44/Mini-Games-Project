@@ -1,0 +1,2155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Reaction Lab ⚗️</title>
+<link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0e1a;
+  --surface: rgba(255,255,255,0.05);
+  --border: rgba(255,255,255,0.10);
+  --border-bright: rgba(255,255,255,0.25);
+  --text: #e8edf5;
+  --muted: rgba(232,237,245,0.5);
+  --accent: #4fffb0;
+  --accent2: #ff6b9d;
+  --accent3: #ffd93d;
+  --glow: 0 0 20px rgba(79,255,176,0.4);
+  --radius: 20px;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  background: 
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(79,255,176,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 80%, rgba(100,130,255,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 60% 30%, rgba(255,107,157,0.05) 0%, transparent 50%);
+  pointer-events:none;
+  z-index:0;
+}
+
+.wrap { position:relative; z-index:1; max-width:540px; margin:0 auto; padding:12px 14px 80px; }
+
+/* ---- HEADER ---- */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  backdrop-filter: blur(12px);
+}
+.logo { font-family:'Boogaloo',cursive; font-size:1.7rem; color:var(--accent); letter-spacing:1px; text-shadow: 0 0 20px rgba(79,255,176,0.6); }
+.logo span { color: var(--accent3); }
+.header-right { display:flex; gap:8px; align-items:center; }
+
+.xp-bar-wrap { display:flex; flex-direction:column; align-items:flex-end; gap:3px; }
+.level-badge { font-family:'Boogaloo',cursive; font-size:0.9rem; color:var(--accent3); letter-spacing:1px; }
+.xp-track { width:90px; height:7px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden; }
+.xp-fill { height:100%; background:linear-gradient(90deg,var(--accent3),#ff9a3c); border-radius:4px; transition:width 0.5s cubic-bezier(.34,1.56,.64,1); width:0%; }
+
+/* ---- SCORE ROW ---- */
+.score-row {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px;
+}
+.score-card {
+  background:var(--surface); border:1.5px solid var(--border); border-radius:14px;
+  padding:10px 8px; text-align:center; backdrop-filter:blur(8px);
+}
+.score-card .val { font-family:'Boogaloo',cursive; font-size:1.6rem; color:var(--accent); }
+.score-card .lbl { font-size:0.6rem; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); margin-top:1px; }
+.score-card.streak .val { color:var(--accent2); }
+.score-card.found .val { color:var(--accent3); }
+
+/* ---- LAB AREA ---- */
+.lab-area {
+  background:var(--surface);
+  border:1.5px solid var(--border);
+  border-radius:var(--radius);
+  padding:14px 12px 10px;
+  margin-bottom:10px;
+  backdrop-filter:blur(12px);
+  position:relative;
+  overflow:visible;
+}
+
+.beaker-wrap { position:relative; width:120px; height:150px; margin:0 auto 14px; }
+.beaker-svg { position:absolute; inset:0; width:100%; height:100%; }
+.beaker-liquid-clip { position:absolute; bottom:4px; left:10px; right:10px; height:0%; border-radius:0 0 18px 18px; transition:height 0.7s cubic-bezier(.34,1.56,.64,1), background-color 0.6s ease; overflow:hidden; }
+.beaker-liquid-clip::after { content:''; position:absolute; top:-8px; left:-60%; width:220%; height:16px; background:inherit; border-radius:50%; animation:wave 1.8s infinite linear; opacity:0.8; }
+@keyframes wave { 0%{transform:translateX(0) scaleY(1)} 50%{transform:translateX(-20%) scaleY(1.3)} 100%{transform:translateX(0) scaleY(1)} }
+.beaker-shake { animation:bShake 0.45s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes bShake {
+  10%,90%{transform:translate(-2px,0) rotate(-1.5deg)}
+  20%,80%{transform:translate(3px,0) rotate(1.5deg)}
+  30%,50%,70%{transform:translate(-5px,0) rotate(-3deg)}
+  40%,60%{transform:translate(5px,0) rotate(3deg)}
+}
+#fx-canvas { position:absolute; top:-160px; left:-120px; width:calc(100% + 240px); height:calc(100% + 200px); pointer-events:none; z-index:20; }
+
+.slots-row { display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:14px; }
+.slot {
+  width:60px; height:60px; border-radius:16px;
+  background:rgba(0,0,0,0.3); border:2px dashed var(--border-bright);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.8rem; transition:all 0.3s;
+}
+.slot.filled { border-style:solid; border-color:var(--accent); background:rgba(79,255,176,0.08); box-shadow:0 0 16px rgba(79,255,176,0.3); animation:popIn 0.35s cubic-bezier(.34,1.56,.64,1); }
+@keyframes popIn { 0%{transform:scale(0.4);opacity:0} 100%{transform:scale(1);opacity:1} }
+.plus-sign { font-size:1.6rem; color:var(--muted); font-weight:900; }
+
+.btn-row { display:flex; gap:10px; }
+.btn-dump { flex:1; background:rgba(255,255,255,0.07); border:2px solid var(--border); color:var(--text); font-family:'Nunito',sans-serif; font-size:0.95rem; font-weight:800; padding:10px; border-radius:14px; cursor:pointer; transition:all 0.2s; border-bottom:4px solid rgba(0,0,0,0.4); }
+.btn-dump:hover { background:rgba(255,255,255,0.12); transform:translateY(-1px); }
+.btn-dump:active { transform:translateY(2px); border-bottom-width:1px; }
+.btn-react {
+  flex:2; background:linear-gradient(135deg,#4fffb0,#00d4aa);
+  border:none; border-bottom:4px solid #009e7a;
+  color:#0a1a14; font-family:'Boogaloo',cursive; font-size:1.25rem; letter-spacing:1px;
+  padding:10px; border-radius:14px; cursor:pointer; transition:all 0.2s;
+  box-shadow:0 4px 20px rgba(79,255,176,0.3);
+}
+.btn-react:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 6px 28px rgba(79,255,176,0.5); }
+.btn-react:active:not(:disabled) { transform:translateY(2px); border-bottom-width:1px; }
+.btn-react:disabled { opacity:0.35; cursor:not-allowed; filter:grayscale(60%); }
+
+/* ---- INGREDIENT SHELF ---- */
+.shelf-panel {
+  background:var(--surface);
+  border:1.5px solid var(--border);
+  border-radius:var(--radius);
+  padding:12px;
+  margin-bottom:10px;
+  backdrop-filter:blur(12px);
+}
+.shelf-label { font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:2px; color:var(--muted); text-align:center; margin-bottom:10px; }
+.shelf-grid { display: flex; flex-direction: column; }
+
+/* ---- TIER ACCORDION SYSTEM ---- */
+.shelf-tier-section {
+  margin-bottom: 6px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1.5px solid transparent;
+  transition: all 0.3s ease;
+  background: rgba(0,0,0,0.18);
+}
+.shelf-tier-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  position: relative;
+  cursor: pointer;
+  background: rgba(255,255,255,0.03);
+  user-select: none;
+}
+.tier-chevron {
+  font-size: 0.7rem;
+  color: var(--muted);
+  transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+  margin-left: 4px;
+}
+.shelf-tier-section.collapsed .tier-chevron {
+  transform: rotate(-90deg);
+}
+.tier-body-wrapper {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.3s cubic-bezier(.4,0,.2,1);
+}
+.shelf-tier-section.collapsed .tier-body-wrapper {
+  grid-template-rows: 0fr;
+}
+.tier-body-inner {
+  overflow: hidden;
+}
+.tier-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  padding: 0 8px 10px 8px;
+}
+
+/* Tier colours */
+.tier-1 .shelf-tier-header { background: linear-gradient(90deg, rgba(79,255,176,0.12), transparent); }
+.tier-2 .shelf-tier-header { background: linear-gradient(90deg, rgba(96,165,250,0.12), transparent); }
+.tier-3 .shelf-tier-header { background: linear-gradient(90deg, rgba(232,121,249,0.12), transparent); }
+.tier-4 .shelf-tier-header { background: linear-gradient(90deg, rgba(251,113,133,0.12), transparent); }
+.tier-1 { border-color: rgba(79,255,176,0.22); }
+.tier-2 { border-color: rgba(96,165,250,0.22); }
+.tier-3 { border-color: rgba(232,121,249,0.22); }
+.tier-4 { border-color: rgba(251,113,133,0.22); }
+.tier-locked-section { border-color: rgba(255,255,255,0.07); }
+
+.tier-icon-pill { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+.tier-1 .tier-icon-pill { background: rgba(79,255,176,0.18); }
+.tier-2 .tier-icon-pill { background: rgba(96,165,250,0.18); }
+.tier-3 .tier-icon-pill { background: rgba(232,121,249,0.18); }
+.tier-4 .tier-icon-pill { background: rgba(251,113,133,0.18); }
+.tier-locked-section .tier-icon-pill { background: rgba(255,255,255,0.06); filter: grayscale(1); }
+
+.tier-header-body { flex: 1; min-width: 0; }
+.tier-header-name { font-size: 0.72rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; line-height: 1; margin-bottom: 2px; }
+.tier-1 .tier-header-name { color: #4fffb0; }
+.tier-2 .tier-header-name { color: #60a5fa; }
+.tier-3 .tier-header-name { color: #e879f9; }
+.tier-4 .tier-header-name { color: #fb7185; }
+.tier-locked-section .tier-header-name { color: rgba(255,255,255,0.3); }
+
+.tier-header-sub { font-size: 0.55rem; font-weight: 700; color: var(--muted); letter-spacing: 0.5px; }
+.tier-badge { font-size: 0.6rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; border-radius: 10px; flex-shrink: 0; }
+.tier-1 .tier-badge { background: rgba(79,255,176,0.15); color: #4fffb0; border: 1px solid rgba(79,255,176,0.3); }
+.tier-2 .tier-badge { background: rgba(96,165,250,0.15); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
+.tier-3 .tier-badge { background: rgba(232,121,249,0.15); color: #e879f9; border: 1px solid rgba(232,121,249,0.3); }
+.tier-4 .tier-badge { background: rgba(251,113,133,0.15); color: #fb7185; border: 1px solid rgba(251,113,133,0.3); }
+.tier-locked-section .tier-badge { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.1); }
+
+.tier-lock-strip { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 12px; background: rgba(0,0,0,0.35); font-size: 0.68rem; font-weight: 800; color: rgba(255,255,255,0.35); letter-spacing: 1px; border-top: 1px solid rgba(255,255,255,0.06); }
+.tier-xp-bar { height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; margin-top: 4px; }
+.tier-xp-fill { height: 100%; border-radius: 2px; transition: width 0.5s cubic-bezier(.34,1.56,.64,1); }
+.tier-1 .tier-xp-fill { background: linear-gradient(90deg,#4fffb0,#00d4aa); }
+.tier-2 .tier-xp-fill { background: linear-gradient(90deg,#60a5fa,#818cf8); }
+.tier-3 .tier-xp-fill { background: linear-gradient(90deg,#e879f9,#a855f7); }
+.tier-4 .tier-xp-fill { background: linear-gradient(90deg,#fb7185,#f43f5e); }
+.tier-complete-pill { display: inline-flex; align-items: center; gap: 4px; background: rgba(79,255,176,0.15); border: 1px solid rgba(79,255,176,0.4); border-radius: 8px; padding: 2px 8px; font-size: 0.55rem; font-weight: 900; color: #4fffb0; letter-spacing: 0.5px; text-transform: uppercase; }
+
+/* COMPACT INGREDIENT BUTTONS */
+.ing-btn {
+  background:rgba(255,255,255,0.06); border:1.5px solid var(--border);
+  border-radius:12px; padding:6px 2px; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  transition:all 0.2s cubic-bezier(.34,1.56,.64,1);
+  position:relative; overflow:hidden;
+}
+.ing-btn::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,0.1),transparent); opacity:0; transition:opacity 0.2s; }
+.ing-btn:hover { transform:translateY(-2px) scale(1.05); border-color:var(--border-bright); box-shadow:0 6px 16px rgba(0,0,0,0.4); }
+.ing-btn:hover::before { opacity:1; }
+.ing-btn:active { transform:translateY(1px) scale(0.95); }
+.ing-btn.used { border-color:var(--accent); background:rgba(79,255,176,0.08); }
+.ing-btn.locked { pointer-events: none; opacity: 0.25; filter: grayscale(1) blur(0.5px); }
+.ing-emoji { font-size:1.4rem; line-height:1; margin-bottom:1px; }
+.ing-formula { font-size:0.55rem; font-weight:900; color:var(--accent); font-family:'Boogaloo',cursive; letter-spacing:0.3px; line-height:1; text-align:center; }
+.ing-name { font-size:0.45rem; font-weight:800; text-transform:uppercase; color:rgba(255,255,255,0.7); text-align:center; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:95%; }
+.ing-type { display: none !important; }
+
+/* ---- ACTION CARDS (Compact Grid) ---- */
+.action-cards { 
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 70px; 
+}
+.action-card {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; padding: 10px 4px; border-radius: 14px; cursor:pointer;
+  border:1.5px solid transparent; font-family:'Nunito',sans-serif;
+  transition:all 0.2s cubic-bezier(.34,1.56,.64,1);
+  position:relative; overflow:hidden; text-align:center;
+}
+.action-card::before { content:''; position:absolute; inset:0; opacity:0; transition:opacity 0.2s; }
+.action-card:hover { transform:translateY(-2px) scale(1.02); }
+.action-card:hover::before { opacity:1; }
+.action-card:active { transform:translateY(1px) scale(0.98); }
+.action-hint { background:linear-gradient(135deg,rgba(255,217,61,0.12),rgba(255,154,60,0.08)); border-color:rgba(255,217,61,0.35); color:var(--accent3); }
+.action-challenge { background:linear-gradient(135deg,rgba(255,107,157,0.12),rgba(255,79,123,0.08)); border-color:rgba(255,107,157,0.35); color:var(--accent2); }
+.action-journal { background:linear-gradient(135deg,rgba(130,153,255,0.12),rgba(100,130,255,0.08)); border-color:rgba(130,153,255,0.35); color:#8299ff; }
+.action-card-icon { font-size: 1.5rem; filter: drop-shadow(0 0 6px currentColor); margin: 0; }
+.action-card-body { margin: 0; }
+.action-card-title { font-size: 0.72rem; font-weight: 900; letter-spacing: 0.5px; line-height: 1.2; }
+.action-card-sub, .action-card-arrow { display: none; }
+
+/* ---- BOTTOM NAV ---- */
+.bottom-nav {
+  position:fixed; bottom:0; left:0; right:0; z-index:50;
+  display:flex; justify-content:center; gap:0;
+  background:rgba(10,14,26,0.95); border-top:1.5px solid var(--border);
+  backdrop-filter:blur(16px);
+}
+.nav-btn {
+  flex:1; max-width:135px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:10px 8px; cursor:pointer; background:none; border:none; color:var(--muted);
+  font-family:'Nunito',sans-serif; font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;
+  transition:all 0.2s; gap:4px;
+}
+.nav-btn .nav-icon { font-size:1.4rem; }
+.nav-btn:hover, .nav-btn.active { color:var(--accent); }
+.nav-btn.active .nav-icon { filter:drop-shadow(0 0 6px var(--accent)); }
+
+/* ---- MODALS ---- */
+.modal-backdrop {
+  position:fixed; inset:0; z-index:100;
+  background:rgba(5,8,18,0.85); backdrop-filter:blur(8px);
+  display:flex; align-items:center; justify-content:center; padding:16px;
+  opacity:0; pointer-events:none; transition:opacity 0.25s;
+}
+.modal-backdrop.open { opacity:1; pointer-events:all; }
+.modal-box {
+  width:100%; max-width:420px; max-height:88vh; overflow-y:auto;
+  border-radius:28px; padding:28px 22px;
+  transform:scale(0.9) translateY(20px); transition:transform 0.3s cubic-bezier(.34,1.56,.64,1);
+}
+.modal-backdrop.open .modal-box { transform:scale(1) translateY(0); }
+
+/* Result modal */
+.modal-result { background:linear-gradient(145deg,#0e1525,#141d30); border:2.5px solid var(--accent); box-shadow:0 0 60px rgba(79,255,176,0.2); }
+.result-icon-wrap { text-align:center; margin-bottom:12px; }
+.result-big-icon { font-size:6rem; display:block; animation:iconBounce 0.6s cubic-bezier(.34,1.56,.64,1); }
+@keyframes iconBounce { 0%{transform:scale(0) rotate(-10deg)} 70%{transform:scale(1.2) rotate(3deg)} 100%{transform:scale(1) rotate(0)} }
+.result-name { font-family:'Boogaloo',cursive; font-size:2rem; text-align:center; letter-spacing:1px; }
+.result-type-badge { display:inline-block; font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:2px; padding:4px 12px; border-radius:20px; margin:8px auto; }
+.badge-chemical { background:rgba(255,107,157,0.2); color:#ff6b9d; border:1.5px solid rgba(255,107,157,0.4); }
+.badge-physical { background:rgba(79,255,176,0.15); color:#4fffb0; border:1.5px solid rgba(79,255,176,0.3); }
+.badge-state { background:rgba(100,130,255,0.2); color:#8299ff; border:1.5px solid rgba(100,130,255,0.4); }
+.badge-discovery { background:rgba(255,217,61,0.2); color:#ffd93d; border:1.5px solid rgba(255,217,61,0.4); }
+.fact-box { background:rgba(255,255,255,0.05); border:1.5px solid var(--border); border-radius:16px; padding:14px 16px; margin:12px 0; }
+.fact-label { font-size:0.6rem; font-weight:800; text-transform:uppercase; letter-spacing:2px; color:var(--accent); margin-bottom:6px; }
+.fact-text { font-size:0.9rem; font-weight:600; color:rgba(255,255,255,0.85); line-height:1.5; }
+.equation-box { background:rgba(79,255,176,0.06); border:1px solid rgba(79,255,176,0.2); border-radius:10px; padding:8px 12px; margin-top:8px; font-size:0.8rem; font-weight:700; color:var(--accent); text-align:center; font-family:'Boogaloo',cursive; letter-spacing:0.5px; }
+.xp-gain { text-align:center; font-family:'Boogaloo',cursive; font-size:1.3rem; color:var(--accent3); margin-bottom:12px; }
+.xp-gain span { font-size:1rem; color:var(--muted); }
+.btn-continue { width:100%; background:linear-gradient(135deg,var(--accent),#00d4aa); border:none; border-bottom:4px solid #009e7a; color:#0a1a14; font-family:'Boogaloo',cursive; font-size:1.4rem; letter-spacing:1px; padding:14px; border-radius:18px; cursor:pointer; transition:all 0.2s; }
+.btn-continue:hover { transform:translateY(-2px); }
+.btn-continue:active { transform:translateY(2px); border-bottom-width:1px; }
+.new-badge { background:linear-gradient(135deg,#ffd93d,#ff9a3c); color:#000; font-size:0.7rem; font-weight:900; padding:3px 10px; border-radius:10px; text-transform:uppercase; letter-spacing:1px; display:inline-block; margin-left:8px; animation:wiggle 0.5s 0.3s ease; }
+@keyframes wiggle { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-8deg)} 75%{transform:rotate(8deg)} }
+
+/* Journal */
+.modal-journal { background:linear-gradient(145deg,#0e1525,#12172a); border:2.5px solid rgba(130,153,255,0.5); }
+.journal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.journal-title { font-family:'Boogaloo',cursive; font-size:1.6rem; color:#8299ff; letter-spacing:1px; }
+.close-btn { background:rgba(255,255,255,0.08); border:1.5px solid var(--border); color:var(--muted); width:34px; height:34px; border-radius:10px; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+.close-btn:hover { background:rgba(255,255,255,0.15); color:var(--text); }
+.progress-summary { background:rgba(130,153,255,0.1); border:1.5px solid rgba(130,153,255,0.25); border-radius:12px; padding:10px 14px; text-align:center; margin-bottom:14px; }
+.progress-summary strong { font-family:'Boogaloo',cursive; font-size:1.3rem; color:#8299ff; }
+.journal-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.jrx { background:rgba(255,255,255,0.04); border:1.5px solid var(--border); border-radius:14px; padding:12px 10px; text-align:center; filter:grayscale(1) opacity(0.3); transition:all 0.4s; }
+.jrx.found { filter:none; border-color:rgba(255,217,61,0.5); background:rgba(255,217,61,0.06); }
+.jrx-icon { font-size:2.2rem; margin-bottom:4px; }
+.jrx-name { font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:var(--text); }
+.jrx-type { font-size:0.55rem; margin-top:4px; font-weight:700; }
+.jrx-hint { font-size:0.6rem; color:var(--muted); margin-top:6px; font-style:italic; display:none; }
+.jrx.found .jrx-hint { display:block; }
+.jrx-ingredients { display:flex; justify-content:center; gap:4px; margin-top:6px; flex-wrap:wrap; }
+.jrx-ing-tag { font-size:0.55rem; background:rgba(255,255,255,0.08); border-radius:6px; padding:2px 5px; display:none; }
+.jrx.found .jrx-ing-tag { display:inline; }
+.jrx-equation { font-size:0.52rem; color:var(--accent); font-weight:800; margin-top:5px; font-family:'Boogaloo',cursive; letter-spacing:0.2px; line-height:1.3; display:none; background:rgba(79,255,176,0.06); border-radius:6px; padding:3px 6px; }
+.jrx.found .jrx-equation { display:block; }
+
+/* ---- CHALLENGES MODAL ---- */
+.modal-challenge { background:linear-gradient(145deg,#1a0e25,#200f2a); border:2.5px solid rgba(255,107,157,0.4); }
+.ch-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.ch-title { font-family:'Boogaloo',cursive; font-size:1.6rem; color:var(--accent2); letter-spacing:1px; }
+.ch-stats-bar { display:flex; gap:8px; margin-bottom:14px; }
+.ch-stat { flex:1; background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:10px; padding:8px; text-align:center; }
+.ch-stat-val { font-family:'Boogaloo',cursive; font-size:1.3rem; color:var(--accent3); }
+.ch-stat-lbl { font-size:0.55rem; text-transform:uppercase; letter-spacing:1px; color:var(--muted); }
+.ch-overall-wrap { margin-bottom:14px; }
+.ch-overall-label { font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin-bottom:6px; display:flex; justify-content:space-between; }
+.ch-overall-track { height:10px; background:rgba(255,255,255,0.08); border-radius:6px; overflow:hidden; }
+.ch-overall-fill { height:100%; background:linear-gradient(90deg,var(--accent2),#ff9a3c); border-radius:6px; transition:width 0.6s cubic-bezier(.34,1.56,.64,1); }
+.ch-category { margin-bottom:10px; }
+.ch-cat-label { font-size:0.6rem; font-weight:900; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin-bottom:6px; padding:0 2px; border-left:3px solid var(--accent2); padding-left:8px; }
+.challenge-item { background:rgba(255,255,255,0.04); border:1.5px solid var(--border); border-radius:14px; padding:12px 14px; margin-bottom:7px; transition:all 0.3s; }
+.challenge-item:hover { border-color:rgba(255,107,157,0.3); background:rgba(255,107,157,0.04); }
+.challenge-item.challenge-done { background:rgba(79,255,176,0.05); border-color:rgba(79,255,176,0.3); }
+.ch-top-row { display:flex; align-items:center; gap:10px; }
+.challenge-icon { font-size:1.5rem; flex-shrink:0; width:34px; text-align:center; }
+.challenge-info { flex:1; min-width:0; }
+.challenge-name { font-size:0.85rem; font-weight:800; color:var(--text); }
+.challenge-desc { font-size:0.7rem; color:var(--muted); margin-top:2px; line-height:1.3; }
+.ch-right { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
+.challenge-reward { font-size:0.75rem; font-weight:800; color:var(--accent3); white-space:nowrap; }
+.ch-done-tag { font-size:0.65rem; font-weight:800; color:var(--accent); background:rgba(79,255,176,0.1); padding:2px 8px; border-radius:8px; border:1px solid rgba(79,255,176,0.3); }
+.ch-chem-tag { display:inline-block; font-size:0.55rem; font-weight:800; font-family:'Boogaloo',cursive; color:var(--accent2); background:rgba(255,107,157,0.1); border:1px solid rgba(255,107,157,0.25); border-radius:6px; padding:1px 6px; margin-top:3px; letter-spacing:0.3px; }
+.ch-progress-wrap { margin-top:8px; }
+.ch-progress-row { display:flex; justify-content:space-between; font-size:0.6rem; color:var(--muted); margin-bottom:3px; font-weight:700; }
+.ch-progress-track { height:5px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; }
+.ch-progress-fill { height:100%; background:linear-gradient(90deg,#ff6b9d,#ffd93d); border-radius:4px; transition:width 0.6s cubic-bezier(.34,1.56,.64,1); }
+
+/* ---- HINT MODAL ---- */
+.modal-hint { background:linear-gradient(145deg,#0e1a14,#0d1520); border:2.5px solid rgba(255,217,61,0.4); box-shadow:0 0 40px rgba(255,217,61,0.1); }
+.hint-modal-title { font-family:'Boogaloo',cursive; font-size:1.6rem; color:var(--accent3); letter-spacing:1px; }
+.hint-intro { font-size:0.8rem; color:var(--muted); margin-bottom:14px; line-height:1.5; }
+.hint-target-card { background:rgba(255,217,61,0.06); border:1.5px solid rgba(255,217,61,0.25); border-radius:16px; padding:14px; margin-bottom:14px; }
+.hint-target-label { font-size:0.55rem; text-transform:uppercase; letter-spacing:2px; color:var(--accent3); margin-bottom:8px; font-weight:800; }
+.hint-target-name { font-family:'Boogaloo',cursive; font-size:1.4rem; color:var(--text); margin-bottom:4px; }
+.hint-target-type { font-size:0.65rem; font-weight:700; color:var(--muted); margin-bottom:10px; }
+.hint-tier { background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px; cursor:pointer; transition:all 0.2s; }
+.hint-tier:hover { border-color:rgba(255,217,61,0.4); background:rgba(255,217,61,0.06); }
+.hint-tier-header { display:flex; justify-content:space-between; align-items:center; }
+.hint-tier-label { font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--accent3); }
+.hint-tier-cost { font-size:0.65rem; color:var(--muted); font-weight:700; }
+.hint-tier-text { font-size:0.82rem; color:var(--text); margin-top:7px; line-height:1.5; display:none; font-weight:600; }
+.hint-tier-text.shown { display:block; }
+.hint-tier.revealed { border-color:rgba(255,217,61,0.5); background:rgba(255,217,61,0.07); }
+.hint-tier.revealed .hint-tier-text { display:block; }
+.hint-chemistry-fact { background:rgba(79,255,176,0.05); border:1px solid rgba(79,255,176,0.2); border-radius:10px; padding:10px 12px; margin-top:10px; font-size:0.78rem; color:rgba(255,255,255,0.7); line-height:1.5; }
+.hint-chemistry-fact strong { color:var(--accent); display:block; font-size:0.6rem; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:4px; }
+.hint-new-target { width:100%; background:rgba(255,217,61,0.1); border:1.5px solid rgba(255,217,61,0.3); color:var(--accent3); font-family:'Nunito',sans-serif; font-weight:800; font-size:0.85rem; padding:10px; border-radius:12px; cursor:pointer; margin-bottom:8px; transition:all 0.2s; }
+.hint-new-target:hover { background:rgba(255,217,61,0.18); }
+.hint-element-row { display:none; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,217,61,0.2); }
+.hint-elem-chip { display:inline-flex; align-items:center; gap:4px; background:rgba(79,255,176,0.1); border:1.5px solid rgba(79,255,176,0.3); border-radius:10px; padding:4px 10px; font-size:0.78rem; color:var(--accent); font-weight:700; }
+.hint-elem-chip b { font-family:'Boogaloo',cursive; font-size:0.85rem; }
+.hint-elem-plus { color:var(--muted); font-size:1rem; font-weight:900; }
+
+/* Win modal — Grand Finale */
+.modal-win { background:linear-gradient(145deg,#0a0e1a,#0e1a14,#0e0a1a); border:2.5px solid var(--accent3); box-shadow:0 0 80px rgba(255,217,61,0.35); position:relative; overflow:hidden; max-height:88vh; display:flex; flex-direction:column; }
+.win-title { font-family:'Boogaloo',cursive; font-size:2.4rem; text-align:center; color:var(--accent3); text-shadow:0 0 30px rgba(255,217,61,0.6); letter-spacing:2px; }
+.win-subtitle { text-align:center; font-size:0.85rem; color:var(--muted); margin:6px 0 16px; font-weight:600; }
+.win-trophy-wrap { position:relative; text-align:center; margin-bottom:10px; }
+.win-trophy { font-size:5.5rem; display:inline-block; animation:trophyBounce 0.8s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes trophyBounce { 0%{transform:scale(0) rotate(-15deg);opacity:0} 70%{transform:scale(1.25) rotate(5deg)} 100%{transform:scale(1) rotate(0);opacity:1} }
+.win-sparkles { display:flex; justify-content:center; gap:12px; margin-top:4px; }
+.win-sparkles span { font-size:1.2rem; animation:sparkFloat 2s ease-in-out infinite; }
+.win-sparkles span:nth-child(1){animation-delay:0s}
+.win-sparkles span:nth-child(2){animation-delay:0.3s}
+.win-sparkles span:nth-child(3){animation-delay:0.6s}
+.win-sparkles span:nth-child(4){animation-delay:0.9s}
+.win-sparkles span:nth-child(5){animation-delay:1.2s}
+@keyframes sparkFloat { 0%,100%{transform:translateY(0) scale(1);opacity:0.7} 50%{transform:translateY(-8px) scale(1.2);opacity:1} }
+.win-stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
+.win-stat { background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,217,61,0.2); border-radius:12px; padding:10px 6px; text-align:center; }
+.win-stat-val { font-family:'Boogaloo',cursive; font-size:1.5rem; color:var(--accent3); }
+.win-stat-lbl { font-size:0.55rem; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); margin-top:2px; }
+.win-score-box { text-align:center; background:rgba(255,217,61,0.07); border:1.5px solid rgba(255,217,61,0.3); border-radius:16px; padding:14px; margin-bottom:14px; }
+.win-message-box { background:rgba(79,255,176,0.05); border:1.5px solid rgba(79,255,176,0.2); border-radius:14px; padding:14px 16px; margin-bottom:14px; }
+.win-message-title { font-size:0.6rem; font-weight:900; text-transform:uppercase; letter-spacing:2px; color:var(--accent); margin-bottom:8px; }
+.win-message-text { font-size:0.82rem; font-weight:600; color:rgba(255,255,255,0.8); line-height:1.6; }
+.win-element-strip { display:flex; flex-wrap:wrap; gap:5px; justify-content:center; margin-bottom:16px; }
+.win-elem { font-size:0.6rem; font-weight:900; font-family:'Boogaloo',cursive; background:rgba(79,255,176,0.08); border:1px solid rgba(79,255,176,0.25); border-radius:7px; padding:3px 7px; color:var(--accent); animation:elemPop 0.4s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes elemPop { 0%{transform:scale(0);opacity:0} 100%{transform:scale(1);opacity:1} }
+.win-replay-btn { margin-top:4px; }
+
+/* Streak lost banner */
+.streak-lost-banner { background:rgba(255,107,157,0.12); border:1.5px solid rgba(255,107,157,0.4); border-radius:12px; padding:8px 14px; text-align:center; font-size:0.82rem; font-weight:800; color:var(--accent2); animation:shakeIn 0.4s cubic-bezier(.36,.07,.19,.97); }
+@keyframes shakeIn { 0%{transform:translateX(-8px);opacity:0} 30%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(2px)} 100%{transform:translateX(0);opacity:1} }
+
+/* Floating score popup */
+.float-score {
+  position:fixed; font-family:'Boogaloo',cursive; font-size:1.4rem;
+  color:var(--accent3); pointer-events:none; z-index:200;
+  text-shadow:0 2px 8px rgba(0,0,0,0.8);
+  animation:floatUp 1.2s ease forwards;
+}
+@keyframes floatUp { 0%{transform:translateY(0) scale(1);opacity:1} 100%{transform:translateY(-80px) scale(1.2);opacity:0} }
+.streak-fire { animation:pulse 0.5s ease infinite alternate; }
+@keyframes pulse { from{transform:scale(1)} to{transform:scale(1.15)} }
+
+/* ---- START SCREEN ---- */
+#start-screen {
+  position: fixed; inset: 0; z-index: 300;
+  background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 24px 20px 32px;
+  overflow-y: auto;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+#start-screen.hiding { opacity: 0; transform: scale(1.04) translateY(-10px); pointer-events: none; }
+#start-screen::before {
+  content:''; position:fixed; inset:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(79,255,176,0.09) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 80%, rgba(100,130,255,0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 60% 30%, rgba(255,107,157,0.07) 0%, transparent 50%);
+  pointer-events:none;
+}
+.start-inner { position:relative; z-index:1; width:100%; max-width:460px; }
+.start-logo-wrap { text-align:center; margin-bottom:6px; }
+.start-beaker-anim { font-size:5rem; display:inline-block; animation:beakerBob 2.4s ease-in-out infinite; filter:drop-shadow(0 0 24px rgba(79,255,176,0.5)); }
+@keyframes beakerBob { 0%,100%{transform:translateY(0) rotate(-4deg)} 50%{transform:translateY(-12px) rotate(4deg)} }
+.start-title { font-family:'Boogaloo',cursive; font-size:3rem; text-align:center; color:var(--accent); letter-spacing:2px; text-shadow:0 0 30px rgba(79,255,176,0.6); line-height:1; margin-bottom:4px; }
+.start-title span { color:var(--accent3); }
+.start-tagline { text-align:center; font-size:0.85rem; color:var(--muted); font-weight:700; letter-spacing:1px; margin-bottom:22px; }
+.start-how { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); padding:18px 16px; margin-bottom:14px; backdrop-filter:blur(12px); }
+.start-how-title { font-family:'Boogaloo',cursive; font-size:1.1rem; color:var(--accent3); letter-spacing:1px; margin-bottom:12px; text-align:center; }
+.start-steps { display:flex; flex-direction:column; gap:10px; }
+.start-step { display:flex; align-items:flex-start; gap:12px; }
+.start-step-num { font-family:'Boogaloo',cursive; font-size:1.4rem; color:var(--accent); background:rgba(79,255,176,0.1); border:1.5px solid rgba(79,255,176,0.3); border-radius:10px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.start-step-body { flex:1; }
+.start-step-title { font-size:0.85rem; font-weight:900; color:var(--text); margin-bottom:2px; }
+.start-step-desc { font-size:0.72rem; color:var(--muted); line-height:1.4; font-weight:600; }
+.start-tips { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:18px; }
+.start-tip { background:var(--surface); border:1.5px solid var(--border); border-radius:14px; padding:10px 12px; backdrop-filter:blur(8px); }
+.start-tip-icon { font-size:1.4rem; margin-bottom:4px; }
+.start-tip-label { font-size:0.65rem; font-weight:900; text-transform:uppercase; letter-spacing:1px; color:var(--accent); margin-bottom:2px; }
+.start-tip-text { font-size:0.68rem; color:var(--muted); font-weight:600; line-height:1.35; }
+.btn-start { width:100%; padding:16px; background:linear-gradient(135deg,#4fffb0,#00d4aa); border:none; border-bottom:5px solid #009e7a; color:#0a1a14; font-family:'Boogaloo',cursive; font-size:1.6rem; letter-spacing:2px; border-radius:18px; cursor:pointer; box-shadow:0 6px 32px rgba(79,255,176,0.4); transition:all 0.2s; animation:pulseGlow 2s ease-in-out infinite; }
+@keyframes pulseGlow { 0%,100%{box-shadow:0 6px 32px rgba(79,255,176,0.4)} 50%{box-shadow:0 8px 44px rgba(79,255,176,0.7)} }
+.btn-start:hover { transform:translateY(-3px); box-shadow:0 10px 48px rgba(79,255,176,0.6); }
+.btn-start:active { transform:translateY(2px); border-bottom-width:2px; }
+.start-footer { text-align:center; font-size:0.62rem; color:var(--muted); margin-top:12px; font-weight:700; letter-spacing:0.5px; }
+
+/* ---- DAILY CHALLENGE BANNER ---- */
+.daily-banner {
+  background: linear-gradient(135deg, rgba(255,107,157,0.18), rgba(255,154,60,0.12));
+  border: 2px solid rgba(255,107,157,0.5);
+  border-radius: 18px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  display: flex; align-items: center; gap: 12px;
+  position: relative; overflow: hidden; cursor: pointer; transition: all 0.2s;
+}
+.daily-banner:hover { transform: translateY(-1px); border-color: rgba(255,107,157,0.8); }
+.daily-banner::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,107,157,0.08), transparent); animation: dailyShimmer 2.5s ease-in-out infinite; }
+@keyframes dailyShimmer { 0%,100% { transform: translateX(-100%); } 50% { transform: translateX(100%); } }
+.daily-icon { font-size: 2rem; filter: drop-shadow(0 0 10px rgba(255,107,157,0.6)); flex-shrink: 0; }
+.daily-body { flex: 1; min-width: 0; }
+.daily-label { font-size: 0.55rem; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; color: var(--accent2); margin-bottom: 2px; }
+.daily-name { font-size: 0.9rem; font-weight: 800; color: var(--text); line-height: 1.2; }
+.daily-progress-row { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+.daily-track { flex: 1; height: 5px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+.daily-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), #ff9a3c); border-radius: 4px; transition: width 0.6s cubic-bezier(.34,1.56,.64,1); }
+.daily-pct { font-size: 0.6rem; font-weight: 800; color: var(--accent2); min-width: 32px; text-align: right; }
+.daily-xp-badge { background: rgba(255,154,60,0.2); border: 1.5px solid rgba(255,154,60,0.4); border-radius: 10px; padding: 4px 10px; font-size: 0.7rem; font-weight: 900; color: #ff9a3c; flex-shrink: 0; }
+.daily-done { background: linear-gradient(135deg, rgba(79,255,176,0.15), rgba(0,212,170,0.1)); border-color: rgba(79,255,176,0.5); }
+.daily-done .daily-label { color: var(--accent); }
+.daily-done .daily-fill { background: linear-gradient(90deg, var(--accent), #00d4aa); }
+
+/* ---- COMBO METER ---- */
+.combo-meter-wrap {
+  background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px;
+  padding: 8px 12px; margin-bottom: 8px; backdrop-filter: blur(8px);
+  display: flex; align-items: center; gap: 12px;
+}
+.combo-meter-label { font-size: 0.58rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); min-width: 50px; }
+.combo-track { flex: 1; height: 10px; background: rgba(255,255,255,0.08); border-radius: 6px; overflow: visible; position: relative; }
+.combo-fill { height: 100%; border-radius: 6px; transition: width 0.5s cubic-bezier(.34,1.56,.64,1); position: relative; }
+.combo-fill::after { content: ''; position: absolute; right: -2px; top: -3px; width: 16px; height: 16px; background: inherit; border-radius: 50%; box-shadow: 0 0 12px currentColor; filter: brightness(1.4); }
+.combo-multiplier { font-family: 'Boogaloo', cursive; font-size: 1.2rem; min-width: 40px; text-align: right; transition: all 0.3s; }
+.combo-multiplier.pop { animation: mxPop 0.4s cubic-bezier(.34,1.56,.64,1); }
+
+/* ---- RARITY BADGE on result ---- */
+.rarity-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.7rem; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; padding: 5px 14px; border-radius: 12px; margin: 6px 0 10px; animation: rarityPulse 1.5s ease-in-out infinite alternate; }
+@keyframes rarityPulse { from{filter:brightness(1)} to{filter:brightness(1.25)} }
+.rarity-common   { background: rgba(148,163,184,0.2); color: #94a3b8; border: 1.5px solid rgba(148,163,184,0.4); }
+.rarity-rare     { background: rgba(96,165,250,0.2);  color: #60a5fa; border: 1.5px solid rgba(96,165,250,0.5); box-shadow: 0 0 12px rgba(96,165,250,0.25); }
+.rarity-epic     { background: rgba(168,85,247,0.2);  color: #a855f7; border: 1.5px solid rgba(168,85,247,0.5); box-shadow: 0 0 16px rgba(168,85,247,0.3); }
+.rarity-legendary{ background: rgba(255,217,61,0.2);  color: #ffd93d; border: 1.5px solid rgba(255,217,61,0.6); box-shadow: 0 0 20px rgba(255,217,61,0.4); }
+
+/* ---- MILESTONE TOAST ---- */
+.milestone-toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.7); z-index: 500; background: linear-gradient(145deg, #0e1525, #141d30); border: 3px solid var(--accent3); border-radius: 28px; padding: 28px 32px; text-align: center; box-shadow: 0 0 80px rgba(255,217,61,0.4); opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(.34,1.56,.64,1); max-width: 320px; width: 90%; }
+.milestone-toast.visible { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: all; }
+.milestone-toast.fading { opacity: 0; transform: translate(-50%, -60%) scale(0.9); }
+.milestone-emoji { font-size: 4rem; display: block; animation: msBounce 0.7s cubic-bezier(.34,1.56,.64,1) both; }
+.milestone-title { font-family: 'Boogaloo', cursive; font-size: 1.8rem; color: var(--accent3); letter-spacing: 2px; margin: 8px 0 4px; }
+.milestone-sub { font-size: 0.85rem; color: var(--muted); font-weight: 600; margin-bottom: 16px; }
+.milestone-pct { font-family: 'Boogaloo', cursive; font-size: 3rem; color: var(--accent); }
+.milestone-dismiss { background: linear-gradient(135deg, var(--accent3), #ff9a3c); border: none; border-bottom: 4px solid #cc7a00; color: #0a0e1a; font-family: 'Boogaloo', cursive; font-size: 1.1rem; padding: 10px 28px; border-radius: 14px; cursor: pointer; transition: all 0.2s; }
+.milestone-dismiss:active { transform: translateY(2px); border-bottom-width: 1px; }
+
+/* ---- QUICK SWAP LAST ---- */
+.quick-swap-btn { position: absolute; right: 12px; top: 12px; background: rgba(255,217,61,0.12); border: 1.5px solid rgba(255,217,61,0.35); border-radius: 10px; color: var(--accent3); font-size: 0.6rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; padding: 5px 10px; cursor: pointer; transition: all 0.2s; display: none; }
+.quick-swap-btn:hover { background: rgba(255,217,61,0.22); transform: scale(1.05); }
+.quick-swap-btn.visible { display: block; }
+
+/* ---- HOT INGREDIENT PULSE ---- */
+@keyframes hotPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,107,157,0.5), 0 6px 16px rgba(0,0,0,0.4); border-color: rgba(255,107,157,0.7); } 50% { box-shadow: 0 0 0 6px rgba(255,107,157,0.2), 0 6px 16px rgba(0,0,0,0.4); border-color: rgba(255,107,157,1); } }
+.ing-btn.hot { animation: hotPulse 1.2s ease-in-out infinite; position: relative; }
+.ing-btn.hot::after { content: '🔥'; position: absolute; top: -6px; right: -6px; font-size: 0.75rem; filter: drop-shadow(0 0 4px rgba(255,107,157,0.8)); animation: hotFlicker 0.8s ease-in-out infinite alternate; }
+
+.react-btn-inner { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.react-streak-badge { background: rgba(0,0,0,0.25); border-radius: 8px; padding: 2px 7px; font-size: 0.75rem; font-weight: 900; letter-spacing: 0.5px; }
+
+/* ---- TIER UNLOCK MODAL ---- */
+.modal-tier-unlock { background: linear-gradient(145deg, #07101e, #0d1a2e); border: 2.5px solid rgba(255,217,61,0.6); box-shadow: 0 0 80px rgba(255,217,61,0.3), 0 0 200px rgba(255,107,157,0.15); position: relative; overflow: hidden; text-align: center; animation: tierUnlockPop 0.5s cubic-bezier(.34,1.56,.64,1); }
+@keyframes tierUnlockPop { 0%  { transform: scale(0.7) translateY(30px); opacity: 0; } 100%{ transform: scale(1) translateY(0); opacity: 1; } }
+.tier-unlock-fireworks { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; border-radius: 28px; }
+#tier-unlock-canvas { width: 100%; height: 100%; display: block; }
+.tier-unlock-icon { position: relative; z-index: 1; font-size: 5rem; display: block; margin: 0 auto 12px; animation: tuIconSpin 0.8s cubic-bezier(.34,1.56,.64,1) 0.2s both; }
+@keyframes tuIconSpin { 0%  { transform: scale(0) rotate(-20deg); opacity: 0; } 100%{ transform: scale(1) rotate(0); opacity: 1; } }
+.tier-unlock-badge { position: relative; z-index: 1; display: inline-block; font-family: 'Boogaloo', cursive; font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase; padding: 5px 16px; border-radius: 20px; background: linear-gradient(135deg,#ffd93d,#ff9a3c); color: #000; font-weight: 900; margin-bottom: 10px; animation: tiBadge 0.5s 0.35s cubic-bezier(.34,1.56,.64,1) both; box-shadow: 0 0 24px rgba(255,217,61,0.5); }
+.tier-unlock-title { position: relative; z-index: 1; font-family: 'Boogaloo', cursive; font-size: 2rem; letter-spacing: 1px; color: var(--text); margin-bottom: 6px; animation: tiFade 0.5s 0.45s ease both; }
+.tier-unlock-subtitle { position: relative; z-index: 1; font-size: 0.88rem; color: rgba(255,255,255,0.65); font-weight: 600; line-height: 1.5; margin-bottom: 10px; animation: tiFade 0.5s 0.5s ease both; }
+.tier-unlock-msg { position: relative; z-index: 1; font-size: 0.82rem; color: var(--accent); font-weight: 700; margin-bottom: 14px; animation: tiFade 0.5s 0.55s ease both; }
+@keyframes tiFade { 0%{opacity:0;transform:translateY(10px)} 100%{opacity:1;transform:translateY(0)} }
+.tier-unlock-new-ings { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 14px; animation: tiFade 0.5s 0.6s ease both; }
+.tu-ing-chip { display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.07); border: 1.5px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 5px 10px; font-size: 0.75rem; font-weight: 700; color: var(--text); }
+.tu-ing-chip .tu-emoji { font-size: 1.2rem; }
+.tu-ing-chip .tu-formula { font-family:'Boogaloo',cursive; color: var(--accent); font-size: 0.8rem; }
+.tier-unlock-science-fact { position: relative; z-index: 1; background: rgba(79,255,176,0.06); border: 1px solid rgba(79,255,176,0.2); border-radius: 12px; padding: 10px 14px; font-size: 0.78rem; color: rgba(255,255,255,0.7); line-height: 1.5; margin-bottom: 16px; text-align: left; animation: tiFade 0.5s 0.65s ease both; }
+.tier-unlock-science-fact strong { color: var(--accent); display: block; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
+.tier-unlock-btn { position: relative; z-index: 1; animation: tiFade 0.5s 0.7s ease both; font-size: 1.2rem !important; }
+
+/* Tier unlocking colours */
+.modal-tier-unlock.tier-2-theme { border-color: rgba(96,165,250,0.7); box-shadow: 0 0 80px rgba(96,165,250,0.3), 0 0 200px rgba(129,140,248,0.15); }
+.modal-tier-unlock.tier-2-theme .tier-unlock-badge { background: linear-gradient(135deg,#60a5fa,#818cf8); color: #fff; box-shadow: 0 0 24px rgba(96,165,250,0.5); }
+.modal-tier-unlock.tier-3-theme { border-color: rgba(232,121,249,0.7); box-shadow: 0 0 80px rgba(232,121,249,0.3), 0 0 200px rgba(168,85,247,0.15); }
+.modal-tier-unlock.tier-3-theme .tier-unlock-badge { background: linear-gradient(135deg,#e879f9,#a855f7); color: #fff; box-shadow: 0 0 24px rgba(232,121,249,0.5); }
+.modal-tier-unlock.tier-4-theme { border-color: rgba(251,113,133,0.7); box-shadow: 0 0 80px rgba(251,113,133,0.3), 0 0 200px rgba(255,107,157,0.15); }
+.modal-tier-unlock.tier-4-theme .tier-unlock-badge { background: linear-gradient(135deg,#fb7185,#f43f5e); color: #fff; box-shadow: 0 0 24px rgba(251,113,133,0.5); }
+
+/* Tier completion toast */
+.tier-complete-toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-120px); z-index: 200; background: linear-gradient(135deg,#ffd93d,#ff9a3c); border-radius: 20px; padding: 12px 22px; display: flex; align-items: center; gap: 10px; box-shadow: 0 8px 32px rgba(255,217,61,0.4); transition: transform 0.4s cubic-bezier(.34,1.56,.64,1); max-width: 320px; width: 90%; }
+.tier-complete-toast.visible { transform: translateX(-50%) translateY(0); }
+.tier-complete-toast.fading  { transform: translateX(-50%) translateY(-120px); transition: transform 0.3s ease-in; }
+.tct-emoji { font-size: 1.8rem; }
+.tct-body { flex: 1; }
+.tct-title { font-family: 'Boogaloo', cursive; font-size: 1rem; color: #000; letter-spacing: 0.5px; }
+.tct-sub   { font-size: 0.68rem; font-weight: 800; color: rgba(0,0,0,0.65); margin-top: 1px; }
+
+/* ---- DAILY MODAL ---- */
+.modal-daily { background: linear-gradient(145deg, #1a0e25, #200f30); border: 2.5px solid rgba(255,107,157,0.5); }
+.daily-modal-title { font-family: 'Boogaloo', cursive; font-size: 1.8rem; color: var(--accent2); letter-spacing: 1px; text-align: center; margin-bottom: 6px; }
+.daily-modal-sub { text-align: center; color: var(--muted); font-size: 0.8rem; font-weight: 600; margin-bottom: 18px; }
+.daily-challenge-card { background: rgba(255,107,157,0.07); border: 2px solid rgba(255,107,157,0.3); border-radius: 18px; padding: 18px 16px; margin-bottom: 14px; text-align: center; }
+.dcc-icon { font-size: 3.5rem; margin-bottom: 8px; filter: drop-shadow(0 0 16px rgba(255,107,157,0.5)); }
+.dcc-name { font-family: 'Boogaloo', cursive; font-size: 1.5rem; color: var(--text); margin-bottom: 6px; }
+.dcc-desc { font-size: 0.82rem; color: var(--muted); font-weight: 600; line-height: 1.5; margin-bottom: 14px; }
+.dcc-reward { font-family: 'Boogaloo', cursive; font-size: 1.3rem; color: #ff9a3c; }
+.dcc-progress-bar { height: 12px; background: rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden; margin: 10px 0; }
+.dcc-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), #ff9a3c); border-radius: 8px; transition: width 0.6s cubic-bezier(.34,1.56,.64,1); }
+.dcc-status { font-size: 0.75rem; font-weight: 800; color: var(--accent2); }
+</style>
+</head>
+<body>
+
+<!-- ===== START SCREEN ===== -->
+<div id="start-screen">
+  <div class="start-inner">
+    <div class="start-logo-wrap">
+      <div class="start-beaker-anim">⚗️</div>
+    </div>
+    <div class="start-title">REACTION<span>LAB</span></div>
+    <div class="start-tagline">⚗️ Real Chemistry. Real Science. Pure Fun. ⚗️</div>
+
+    <div class="start-how">
+      <div class="start-how-title">🧪 How to Play</div>
+      <div class="start-steps">
+        <div class="start-step">
+          <div class="start-step-num">1</div>
+          <div class="start-step-body">
+            <div class="start-step-title">Pick 2 Ingredients</div>
+            <div class="start-step-desc">Tap any two chemicals from the shelf below the beaker. They'll load into the mixing slots.</div>
+          </div>
+        </div>
+        <div class="start-step">
+          <div class="start-step-num">2</div>
+          <div class="start-step-body">
+            <div class="start-step-title">Hit ⚡ REACT!</div>
+            <div class="start-step-desc">Press the green REACT button to mix them. Watch the beaker and see what happens — explosions, flames, colour changes and more!</div>
+          </div>
+        </div>
+        <div class="start-step">
+          <div class="start-step-num">3</div>
+          <div class="start-step-body">
+            <div class="start-step-title">Discover All 20 Reactions</div>
+            <div class="start-step-desc">Every valid combo triggers a real chemical or physical reaction with a science fact and equation. Find all 33 to become a Master Chemist!</div>
+          </div>
+        </div>
+        <div class="start-step">
+          <div class="start-step-num">4</div>
+          <div class="start-step-body">
+            <div class="start-step-title">Earn XP &amp; Level Up</div>
+            <div class="start-step-desc">New discoveries give bonus XP. Build streaks for multipliers. Complete challenges for huge rewards.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="start-tips">
+      <div class="start-tip">
+        <div class="start-tip-icon">💡</div>
+        <div class="start-tip-label">Stuck?</div>
+        <div class="start-tip-text">Use the Hint Lab to get tiered chemistry clues for undiscovered reactions.</div>
+      </div>
+      <div class="start-tip">
+        <div class="start-tip-icon">📖</div>
+        <div class="start-tip-label">Journal</div>
+        <div class="start-tip-text">Track every reaction you've found, with equations and ingredient combos.</div>
+      </div>
+      <div class="start-tip">
+        <div class="start-tip-icon">🔥</div>
+        <div class="start-tip-label">Streaks</div>
+        <div class="start-tip-text">Chain successful reactions for XP multipliers. Dumping the beaker breaks your streak!</div>
+      </div>
+      <div class="start-tip">
+        <div class="start-tip-icon">🎯</div>
+        <div class="start-tip-label">Challenges</div>
+        <div class="start-tip-text">Bonus goals like "discover all flame tests" or "build a 5× streak" for extra XP.</div>
+      </div>
+    </div>
+
+    <button class="btn-start" onclick="startGame()">⚡ START EXPERIMENT ⚡</button>
+    <div class="start-footer">33 reactions to discover · Flame tests · Metal reactions · Acid-base · State changes · Radical chemistry</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <div class="logo">REACTION<span>LAB</span> ⚗️</div>
+    </div>
+    <div class="header-right">
+      <div class="xp-bar-wrap">
+        <div class="level-badge" id="level-badge">LVL 1</div>
+        <div class="xp-track"><div class="xp-fill" id="xp-fill"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Daily Challenge Banner -->
+  <div class="daily-banner" id="daily-banner" onclick="openDailyModal()">
+    <div class="daily-icon" id="daily-icon">🎯</div>
+    <div class="daily-body">
+      <div class="daily-label">⚡ Daily Challenge</div>
+      <div class="daily-name" id="daily-name">Loading...</div>
+      <div class="daily-progress-row">
+        <div class="daily-track"><div class="daily-fill" id="daily-fill" style="width:0%"></div></div>
+        <div class="daily-pct" id="daily-pct">0%</div>
+      </div>
+    </div>
+    <div class="daily-xp-badge" id="daily-xp-badge">+???</div>
+  </div>
+
+  <!-- Combo Meter -->
+  <div class="combo-meter-wrap">
+    <div class="combo-meter-label">COMBO</div>
+    <div class="combo-track">
+      <div class="combo-fill" id="combo-fill" style="width:0%;background:linear-gradient(90deg,#4fffb0,#00d4aa)"></div>
+    </div>
+    <div class="combo-multiplier" id="combo-multiplier" style="color:var(--accent)">×1</div>
+  </div>
+
+  <!-- Score Row -->
+  <div class="score-row">
+    <div class="score-card">
+      <div class="val" id="score-val">0</div>
+      <div class="lbl">Score</div>
+    </div>
+    <div class="score-card streak">
+      <div class="val" id="streak-val">0</div>
+      <div class="lbl">Streak</div>
+    </div>
+    <div class="score-card found">
+      <div class="val" id="found-val">0/33</div>
+      <div class="lbl">Discovered</div>
+    </div>
+  </div>
+
+  <!-- Lab Area -->
+  <div class="lab-area">
+    <div class="beaker-wrap" id="beaker-wrap">
+      <canvas id="fx-canvas"></canvas>
+      <svg class="beaker-svg" viewBox="0 0 130 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="0" width="122" height="12" rx="6" fill="rgba(255,255,255,0.35)"/>
+        <path d="M14 12 L10 162 Q10 166 14 166 L116 166 Q120 166 120 162 L116 12 Z" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.4)" stroke-width="3"/>
+        <path d="M22 30 L20 150" stroke="rgba(255,255,255,0.25)" stroke-width="4" stroke-linecap="round"/>
+        <line x1="25" y1="50"  x2="35" y2="50"  stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+        <line x1="25" y1="80"  x2="35" y2="80"  stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+        <line x1="25" y1="110" x2="35" y2="110" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+        <line x1="25" y1="140" x2="35" y2="140" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+        <text x="37" y="53"  fill="rgba(255,255,255,0.2)" font-size="7" font-family="Nunito">75</text>
+        <text x="37" y="83"  fill="rgba(255,255,255,0.2)" font-size="7" font-family="Nunito">50</text>
+        <text x="37" y="113" fill="rgba(255,255,255,0.2)" font-size="7" font-family="Nunito">25</text>
+      </svg>
+      <div class="beaker-liquid-clip" id="beaker-liquid" style="height:0%;background:transparent;"></div>
+    </div>
+
+    <!-- Quick Swap Last -->
+    <button class="quick-swap-btn" id="quick-swap-btn" onclick="quickSwapLast()" title="Swap last ingredient back in">🔄 Last Again</button>
+
+    <!-- Slots -->
+    <div class="slots-row">
+      <div class="slot" id="slot-1"></div>
+      <div class="plus-sign">+</div>
+      <div class="slot" id="slot-2"></div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="btn-row">
+      <button class="btn-dump" onclick="clearBeaker()">🗑️ DUMP</button>
+      <button class="btn-react" id="react-btn" onclick="triggerReaction()" disabled><span class="react-btn-inner"><span>⚡ REACT!</span><span class="react-streak-badge" id="react-streak-badge" style="display:none"></span></span></button>
+    </div>
+  </div>
+
+  <!-- Ingredient Shelf -->
+  <div class="shelf-panel">
+    <div class="shelf-label">🧪 Ingredient Shelf — <span id="ing-count-label">25 chemicals</span> · <span style="color:var(--accent2);font-size:0.6rem" id="reactions-count-label">33 reactions to discover</span></div>
+    <div class="shelf-grid" id="shelf-grid"></div>
+  </div>
+
+  <!-- Action Cards -->
+  <div class="action-cards">
+    <div class="action-card action-hint" onclick="showHint()">
+      <div class="action-card-icon">💡</div>
+      <div class="action-card-body">
+        <div class="action-card-title">Hint Lab</div>
+      </div>
+    </div>
+    <div class="action-card action-challenge" onclick="openChallenges()">
+      <div class="action-card-icon">🎯</div>
+      <div class="action-card-body">
+        <div class="action-card-title">Challenges</div>
+      </div>
+    </div>
+    <div class="action-card action-journal" onclick="openJournal()">
+      <div class="action-card-icon">📖</div>
+      <div class="action-card-body">
+        <div class="action-card-title">Journal</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end wrap -->
+
+<!-- Bottom nav -->
+<div class="bottom-nav">
+  <button class="nav-btn active" id="nav-lab" onclick="navSwitch('lab')"><span class="nav-icon">⚗️</span>Lab</button>
+  <button class="nav-btn" id="nav-journal" onclick="openJournal()"><span class="nav-icon">📖</span>Journal</button>
+  <button class="nav-btn" id="nav-challenges" onclick="openChallenges()"><span class="nav-icon">🎯</span>Challenges</button>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- Result Modal -->
+<div class="modal-backdrop" id="modal-result">
+  <div class="modal-box modal-result">
+    <div class="result-icon-wrap">
+      <span class="result-big-icon" id="r-icon">✨</span>
+    </div>
+    <div id="r-new-wrap" style="text-align:center;margin-bottom:6px;"></div>
+    <div id="r-rarity-wrap" style="text-align:center;"></div>
+    <div id="r-streak-warn" style="display:none;margin-bottom:8px;"></div>
+    <div class="result-name" id="r-name">Purple Potion</div>
+    <div style="text-align:center;margin:8px 0;"><span class="result-type-badge badge-chemical" id="r-badge">Chemical Reaction</span></div>
+    <div class="fact-box">
+      <div class="fact-label">⚗️ Science Fact</div>
+      <div class="fact-text" id="r-fact"></div>
+      <div class="equation-box" id="r-equation" style="display:none;"></div>
+    </div>
+    <div class="xp-gain" id="r-xp">+100 XP <span>earned!</span></div>
+    <button class="btn-continue" onclick="closeResult()">Keep Experimenting 🧪</button>
+    <button class="btn-dump" style="width:100%;margin-top:8px;font-size:0.9rem;font-weight:800;border-radius:14px;" onclick="resetGame();closeModal('modal-result')">🔄 Play Again</button>
+  </div>
+</div>
+
+<!-- Journal Modal -->
+<div class="modal-backdrop" id="modal-journal">
+  <div class="modal-box modal-journal">
+    <div class="journal-header">
+      <div class="journal-title">📖 Lab Journal</div>
+      <button class="close-btn" onclick="closeModal('modal-journal')">✕</button>
+    </div>
+    <div class="progress-summary">Discovered <strong id="jrn-count">0</strong> of <strong id="jrn-total">33</strong> reactions</div>
+    <div style="background:rgba(255,255,255,0.05);border-radius:10px;height:8px;margin-bottom:14px;overflow:hidden;">
+      <div id="jrn-pbar" style="height:100%;background:linear-gradient(90deg,#8299ff,#4fffb0);border-radius:10px;transition:width 0.5s;width:0%"></div>
+    </div>
+    <div class="journal-grid" id="journal-grid"></div>
+    <button class="btn-continue" style="margin-top:14px;" onclick="closeModal('modal-journal')">Back to Lab</button>
+  </div>
+</div>
+
+<!-- Challenges Modal -->
+<div class="modal-backdrop" id="modal-challenges">
+  <div class="modal-box modal-challenge">
+    <div class="ch-header">
+      <div class="ch-title">🎯 Challenges</div>
+      <button class="close-btn" onclick="closeModal('modal-challenges')">✕</button>
+    </div>
+    <div class="ch-stats-bar" id="ch-stats-bar">
+      <div class="ch-stat"><div class="ch-stat-val" id="ch-completed-count">0</div><div class="ch-stat-lbl">Completed</div></div>
+      <div class="ch-stat"><div class="ch-stat-val" id="ch-total-count">0</div><div class="ch-stat-lbl">Total</div></div>
+      <div class="ch-stat"><div class="ch-stat-val" id="ch-bonus-xp">0</div><div class="ch-stat-lbl">Bonus XP</div></div>
+    </div>
+    <div class="ch-overall-wrap">
+      <div class="ch-overall-label">
+        <span>Overall Progress</span>
+        <span id="ch-pct">0%</span>
+      </div>
+      <div class="ch-overall-track">
+        <div class="ch-overall-fill" id="ch-overall-fill" style="width:0%"></div>
+      </div>
+    </div>
+    <div id="challenges-list"></div>
+    <button class="btn-continue" style="background:linear-gradient(135deg,#ff6b9d,#ff4f7b);border-bottom-color:#cc3060;margin-top:8px;" onclick="closeModal('modal-challenges')">Keep Going!</button>
+  </div>
+</div>
+
+<!-- Tier Unlock Modal -->
+<div class="modal-backdrop" id="modal-tier-unlock">
+  <div class="modal-box modal-tier-unlock" id="tier-unlock-box">
+    <div class="tier-unlock-fireworks" id="tier-unlock-canvas-wrap">
+      <canvas id="tier-unlock-canvas"></canvas>
+    </div>
+    <div class="tier-unlock-icon" id="tu-icon">⚗️</div>
+    <div class="tier-unlock-badge" id="tu-tier-badge">TIER 2 UNLOCKED</div>
+    <div class="tier-unlock-title" id="tu-title">Advanced Chemistry</div>
+    <div class="tier-unlock-subtitle" id="tu-subtitle">You've mastered the basics. Time to go deeper.</div>
+    <div class="tier-unlock-msg" id="tu-msg">New ingredients are now available in your lab shelf!</div>
+    <div class="tier-unlock-new-ings" id="tu-new-ings"></div>
+    <div class="tier-unlock-science-fact" id="tu-science-fact"></div>
+    <button class="btn-continue tier-unlock-btn" id="tu-continue-btn" onclick="closeTierUnlock()">Unlock the Lab! 🔓</button>
+  </div>
+</div>
+
+<!-- Tier Locked Reminder Modal -->
+<div class="modal-backdrop" id="modal-tier-locked">
+  <div class="modal-box" style="background:linear-gradient(145deg,#0e1525,#12172a);border:2.5px solid rgba(255,217,61,0.4);max-width:360px;">
+    <div style="text-align:center;font-size:3rem;margin-bottom:12px;">🔒</div>
+    <div style="font-family:'Boogaloo',cursive;font-size:1.5rem;color:var(--accent3);text-align:center;margin-bottom:8px;">Tier Locked!</div>
+    <div style="font-size:0.88rem;color:rgba(255,255,255,0.75);text-align:center;line-height:1.6;margin-bottom:14px;" id="tier-locked-msg">
+      Discover all reactions in the current tier first before advancing!
+    </div>
+    <div style="background:rgba(255,217,61,0.07);border:1px solid rgba(255,217,61,0.25);border-radius:14px;padding:12px;margin-bottom:14px;" id="tier-locked-progress-wrap">
+      <div style="font-size:0.6rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent3);margin-bottom:6px;font-weight:800;">Your Progress</div>
+      <div style="height:8px;background:rgba(255,255,255,0.08);border-radius:6px;overflow:hidden;margin-bottom:6px;">
+        <div id="tier-locked-pbar" style="height:100%;background:linear-gradient(90deg,var(--accent3),#ff9a3c);border-radius:6px;transition:width 0.5s;width:0%"></div>
+      </div>
+      <div style="font-size:0.75rem;color:var(--muted);font-weight:700;" id="tier-locked-pct">0 / 0 reactions found</div>
+    </div>
+    <button class="btn-continue" onclick="closeModal('modal-tier-locked')">Got It — Keep Exploring!</button>
+  </div>
+</div>
+
+<!-- Hint Modal -->
+<div class="modal-backdrop" id="modal-hint">
+  <div class="modal-box modal-hint">
+    <div class="journal-header">
+      <div class="hint-modal-title">💡 Hint Lab</div>
+      <button class="close-btn" onclick="closeModal('modal-hint')">✕</button>
+    </div>
+    <div class="hint-intro" id="hint-intro">Choose a hint level — more detailed hints reveal more chemistry clues!</div>
+    <div class="hint-target-card" id="hint-target-card">
+      <div class="hint-target-label">🔍 Target Reaction</div>
+      <div class="hint-target-name" id="hint-target-name">???</div>
+      <div class="hint-target-type" id="hint-target-type"></div>
+      <div class="hint-element-row" id="hint-element-row"></div>
+    </div>
+    <div id="hint-tiers"></div>
+    <div class="hint-chemistry-fact" id="hint-chem-fact" style="display:none;">
+      <strong>🧬 Chemistry Concept</strong>
+      <span id="hint-concept-text"></span>
+    </div>
+    <button class="hint-new-target" onclick="loadNewHintTarget()">🔀 Try a Different Reaction</button>
+    <button class="btn-continue" onclick="closeModal('modal-hint')">Back to Lab</button>
+  </div>
+</div>
+
+<!-- Win Modal -->
+<div class="modal-backdrop" id="modal-win">
+  <div class="modal-box modal-win" style="display:flex;flex-direction:column;padding:0;overflow:hidden;">
+    <canvas id="win-canvas" style="position:absolute;inset:0;width:100%;height:100%;border-radius:28px;pointer-events:none;z-index:0;"></canvas>
+    <div style="position:relative;z-index:1;overflow-y:auto;flex:1;padding:24px 20px 8px;-webkit-overflow-scrolling:touch;">
+      <div class="win-trophy-wrap">
+        <div class="win-trophy">🏆</div>
+        <div class="win-sparkles">
+          <span>⭐</span><span>✨</span><span>🌟</span><span>💫</span><span>⭐</span>
+        </div>
+      </div>
+      <div class="win-title">MASTER CHEMIST!</div>
+      <div class="win-subtitle">You've unlocked every reaction in the lab!</div>
+      <div class="win-stats-row">
+        <div class="win-stat"><div class="win-stat-val" id="win-reactions">20</div><div class="win-stat-lbl">Reactions</div></div>
+        <div class="win-stat"><div class="win-stat-val" id="win-streak-max">0</div><div class="win-stat-lbl">Best Streak</div></div>
+        <div class="win-stat"><div class="win-stat-val" id="win-level">1</div><div class="win-stat-lbl">Level</div></div>
+      </div>
+      <div class="win-score-box">
+        <div style="font-size:0.6rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent3);margin-bottom:4px;font-weight:800;">Final Score</div>
+        <div style="font-family:'Boogaloo',cursive;font-size:2.6rem;color:var(--accent3);text-shadow:0 0 30px rgba(255,217,61,0.7);" id="win-score">0 pts</div>
+      </div>
+      <div class="win-message-box">
+        <div class="win-message-title">🧬 A Note from the Lab</div>
+        <div class="win-message-text">You've gone from mixing colours to mastering coordination chemistry, spectroscopy, acid-base equilibria, radical chemistry, and thermodynamics. All 33 reactions you discovered are real — the equations, the facts, the science. The periodic table has 118 elements — imagine what reactions still await you. Keep experimenting. Real science starts exactly like this. 🔬</div>
+      </div>
+      <div class="win-element-strip" id="win-element-strip"></div>
+    </div>
+    <div style="position:relative;z-index:2;flex-shrink:0;padding:10px 20px 20px;background:linear-gradient(to bottom,transparent,rgba(10,14,26,0.97) 28%);">
+      <button class="btn-continue win-replay-btn" onclick="resetGame()" style="width:100%;margin:0;font-size:1.25rem;letter-spacing:1px;padding:15px 10px;border-radius:16px;">🔄 Play Again</button>
+    </div>
+  </div>
+</div>
+
+<!-- Milestone / Tier Complete Toasts -->
+<div class="tier-complete-toast" id="tier-complete-toast">
+  <div class="tct-emoji" id="tct-emoji">🏆</div>
+  <div class="tct-body">
+    <div class="tct-title" id="tct-title">Tier Complete!</div>
+    <div class="tct-sub"  id="tct-sub">Next tier unlocking...</div>
+  </div>
+</div>
+
+<div class="milestone-toast" id="milestone-toast">
+  <span class="milestone-emoji" id="ms-emoji">🎉</span>
+  <div class="milestone-title" id="ms-title">Milestone!</div>
+  <div class="milestone-sub" id="ms-sub">You've discovered 25% of all reactions!</div>
+  <div class="milestone-pct" id="ms-pct">25%</div>
+  <button class="milestone-dismiss" onclick="dismissMilestone()">Keep Going! ⚗️</button>
+</div>
+
+<!-- ===== DAILY MODAL ===== -->
+<div class="modal-backdrop" id="modal-daily">
+  <div class="modal-box modal-daily">
+    <div class="daily-modal-title">⚡ Daily Challenge</div>
+    <div class="daily-modal-sub" id="daily-modal-sub">A new challenge every day!</div>
+    <div class="daily-challenge-card">
+      <div class="dcc-icon" id="dcc-icon">🎯</div>
+      <div class="dcc-name" id="dcc-name">Challenge Name</div>
+      <div class="dcc-desc" id="dcc-desc">Description here</div>
+      <div class="dcc-progress-bar"><div class="dcc-progress-fill" id="dcc-fill" style="width:0%"></div></div>
+      <div class="dcc-status" id="dcc-status">0 / 0</div>
+      <div class="dcc-reward" id="dcc-reward">+500 XP</div>
+    </div>
+    <button class="btn-continue" style="background:linear-gradient(135deg,#ff6b9d,#ff4f7b);border-bottom-color:#cc3060;" onclick="closeModal('modal-daily')">Let's Do It! 🔥</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA — INGREDIENTS (25 total)
+// ============================================================
+const INGREDIENTS = [
+  { id:'baking_soda', name:'Baking Soda',   formula:'NaHCO₃', emoji:'🧪', type:'Base',       color:'#f1f5f9' },
+  { id:'vinegar',     name:'Vinegar',       formula:'CH₃COOH',emoji:'🍾', type:'Acid',       color:'#e2e8f0' },
+  { id:'water',       name:'Water',         formula:'H₂O',    emoji:'💧', type:'Liquid',     color:'#60a5fa' },
+  { id:'sodium',      name:'Sodium Metal',  formula:'Na(s)',   emoji:'⚪', type:'Alkali Metal',color:'#fbbf24' },
+  { id:'potassium',   name:'Potassium Nit', formula:'KNO₃',   emoji:'🔷', type:'Salt',       color:'#818cf8' },
+  { id:'magnesium',   name:'Magnesium',     formula:'Mg(s)',   emoji:'🔘', type:'Metal',      color:'#e0e7ff' },
+  { id:'ice',         name:'Ice Cubes',     formula:'H₂O(s)', emoji:'🧊', type:'Solid',      color:'#bae6fd' },
+  { id:'heat',        name:'Bunsen Flame',  formula:'ΔH > 0', emoji:'🔥', type:'Energy',     color:'#f97316' },
+  { id:'salt',        name:'Table Salt',    formula:'NaCl',   emoji:'🧂', type:'Salt',       color:'#fef9c3' },
+  { id:'lemon',       name:'Citric Acid',   formula:'C₆H₈O₇',emoji:'🍋', type:'Acid',       color:'#fde047' },
+  { id:'milk',        name:'Milk',          formula:'pH 6.5', emoji:'🥛', type:'Liquid',     color:'#f8fafc' },
+  { id:'oil',         name:'Mineral Oil',   formula:'C₁₂H₂₆',emoji:'🫙', type:'Nonpolar',   color:'#fef08a' },
+  { id:'sulfur',      name:'Sulfur Powder', formula:'S(s)',   emoji:'🌑', type:'Nonmetal',   color:'#fef08a' },
+  { id:'carbon',      name:'Activated C',   formula:'C(s)',   emoji:'⬛', type:'Carbon',     color:'#292524' },
+  { id:'hydrogen',    name:'Hydrogen Perox',formula:'H₂O₂',  emoji:'🧴', type:'Oxidiser',   color:'#ecfdf5' },
+  { id:'copper',      name:'Copper Sulfate',formula:'CuSO₄', emoji:'🔵', type:'Metal Salt', color:'#14b8a6' },
+  { id:'iron',        name:'Iron Filings',  formula:'Fe(s)',  emoji:'🔩', type:'Metal',      color:'#78716c' },
+  { id:'ammonia',     name:'Ammonia',       formula:'NH₃',   emoji:'💨', type:'Base',       color:'#d1fae5' },
+  { id:'iodine',      name:'Iodine',        formula:'I₂',    emoji:'🟣', type:'Halogen',    color:'#7c3aed' },
+  { id:'starch',      name:'Corn Starch',   formula:'(C₆H₁₀O₅)ₙ',emoji:'🌽', type:'Carb', color:'#fef3c7' },
+  { id:'zinc',        name:'Zinc Metal',    formula:'Zn(s)', emoji:'🔘', type:'Metal',      color:'#d1d5db' },
+  { id:'chlorine',    name:'Chlorine Gas',  formula:'Cl₂',  emoji:'🟡', type:'Halogen',    color:'#bef264' },
+  { id:'ethanol',     name:'Ethanol',       formula:'C₂H₅OH',emoji:'🍶', type:'Alcohol',   color:'#fce7f3' },
+  { id:'glucose',     name:'Glucose',       formula:'C₆H₁₂O₆',emoji:'🍬', type:'Sugar',   color:'#fef9c3' },
+  { id:'calcium',     name:'Calcium Metal', formula:'Ca(s)', emoji:'🪨', type:'Alkaline Metal',color:'#f5f0e0' }
+];
+
+// ============================================================
+// DATA — REACTIONS (33 total)
+// ============================================================
+const REACTIONS = [
+  { id:'volcano',      ing:['baking_soda','vinegar'],  icon:'🌋', name:'Volcano Eruption!',     type:'chemical', color:'#cbd5e1', fx:'bigbubbles', equation:'NaHCO₃ + CH₃COOH → CH₃COONa + H₂O + CO₂↑', fact:'When sodium bicarbonate meets acetic acid in vinegar, they neutralise each other, rapidly producing CO₂ gas. This is a classic acid-base neutralisation reaction!', xp:150, hint:'A classic acid + base combo. One makes bread rise, the other makes pickles...', hintsExtra:['Think: something that makes bread rise + something sour and tangy...','Baking Soda + Vinegar → NaHCO₃ meets CH₃COOH and fizzes with CO₂!'], concept:'Acid-Base Neutralisation: acids and bases react to form a salt + water, releasing CO₂ when a carbonate is involved.' },
+  { id:'steam',        ing:['heat','water'],           icon:'☁️', name:'Boiling Steam',          type:'state', color:'#e0f2fe', fx:'steam', equation:'H₂O(l) + heat → H₂O(g)  [100°C]', fact:'Heat increases the kinetic energy of water molecules until they overcome hydrogen bonding and escape as vapour.', xp:100, hint:'Apply energy to the universal solvent...', hintsExtra:['At 100°C, water molecules gain enough energy to escape as vapour.','Bunsen Flame + Water → H₂O(l) becomes H₂O(g).'], concept:'Phase Transition: matter changes states by adding/removing thermal energy.' },
+  { id:'frozen',       ing:['ice','water'],            icon:'❄️', name:'Frozen Solid',           type:'state', color:'#93c5fd', fx:'freeze', equation:'H₂O(l) → H₂O(s)  [at 0°C / 32°F]', fact:'Ice absorbs heat from the water, locking molecules into a hydrogen-bonded crystal lattice.', xp:100, hint:'Cold meets liquid...', hintsExtra:['Water molecules slow down and lock into a lattice.','Ice + Water → more H₂O(s).'], concept:'Crystallisation: As temperature drops, molecules lose energy and lock into structures.' },
+  { id:'melt',         ing:['heat','ice'],             icon:'💧', name:'Melting Ice',            type:'state', color:'#3b82f6', fx:'drip', equation:'H₂O(s) + heat → H₂O(l)', fact:'Heat vibrates the crystal lattice of ice until hydrogen bonds break. The lattice collapses and ice becomes liquid water.', xp:100, hint:'Energy attacks the crystal lattice...', hintsExtra:['Enthalpy of fusion for ice must be overcome.','Bunsen Flame + Ice → liquid water.'], concept:'Enthalpy of Fusion: energy required to melt a solid at its melting point.' },
+  { id:'decompose',    ing:['baking_soda','heat'],     icon:'💨', name:'Thermal Decomp',         type:'chemical', color:'#57534e', fx:'steam', equation:'2NaHCO₃ → Na₂CO₃ + H₂O↑ + CO₂↑', fact:'Heating sodium bicarbonate causes it to decompose into sodium carbonate, water vapour, and CO₂.', xp:130, hint:'Heat breaks down a common white kitchen powder...', hintsExtra:['At 80°C+ sodium bicarbonate decomposes.','Baking Soda + Bunsen Flame → Thermal decomposition!'], concept:'Thermal Decomposition: heat breaks one compound into simpler substances.' },
+  { id:'saltwater',    ing:['salt','water'],           icon:'🌊', name:'Salt Solution',          type:'physical', color:'#7dd3fc', fx:'sparkle', equation:'NaCl(s) + H₂O(l) → Na⁺(aq) + Cl⁻(aq)', fact:'Polar water molecules surround Na⁺ and Cl⁻ ions, pulling them apart into solution. This lowers the freezing point.', xp:90, hint:'The most common seasoning + the universal solvent...', hintsExtra:['Ionic compounds dissolve in polar solvents.','NaCl + H₂O → Na⁺(aq) + Cl⁻(aq).'], concept:'Ionic Dissolution: polar water molecules hydrate ions.' },
+  { id:'lemonade',     ing:['lemon','water'],          icon:'🍋', name:'Citric Solution',        type:'physical', color:'#fef08a', fx:'sparkle', equation:'C₆H₈O₇ + H₂O ⇌ H⁺ + C₆H₇O₇⁻', fact:'Citric acid partially dissociates in water, releasing H⁺ ions that drop pH.', xp:90, hint:'A citrus fruit\'s acid meets the universal solvent...', hintsExtra:['Citric acid is triprotic.','Citric Acid + Water → partial dissociation.'], concept:'Weak Acid Dissociation: weak acids only partially ionise in water.' },
+  { id:'curds',        ing:['lemon','milk'],           icon:'🧀', name:'Cheese Curds',           type:'chemical', color:'#fef3c7', fx:'plop', equation:'H⁺ + casein → coagulation', fact:'The citric acid lowers milk\'s pH to the isoelectric point of casein, causing the proteins to clump into curds.', xp:140, hint:'Acid disrupts the electrical balance of a dairy protein...', hintsExtra:['Drop the pH and the charges cancel — it clumps.','Citric Acid + Milk → Coagulation.'], concept:'Protein Denaturation: destroying repulsion between molecules causes them to aggregate.' },
+  { id:'separation',   ing:['oil','water'],            icon:'🫧', name:'Oil & Water',            type:'physical', color:'#fde68a', fx:'oil', equation:'C₁₂H₂₆ + H₂O → two immiscible layers', fact:'Water is polar; mineral oil is nonpolar. "Like dissolves like" — oil floats because its density is less than water\'s.', xp:90, hint:'Two liquids that refuse to mix due to polarity...', hintsExtra:['Polarity is the key.','Mineral Oil + Water → immiscible.'], concept:'Polarity & Miscibility: polar compounds mix with polar; nonpolar with nonpolar.' },
+  { id:'sodium_flame', ing:['sodium','heat'],          icon:'🟠', name:'Sodium Flame Test',      type:'chemical', color:'#f97316', fx:'sparkle', equation:'Na + heat → Na* → Na + hν (589 nm)', fact:'When sodium is heated, electrons absorb energy and jump to higher orbitals. As they fall, they emit orange-yellow light.', xp:160, hint:'Heat excites an alkali metal\'s electrons and they emit orange light...', hintsExtra:['Excited electrons emit photons.','Sodium Metal + Bunsen Flame → orange-yellow.'], concept:'Flame Emission Spectroscopy: thermally excited atoms emit photons at characteristic wavelengths.' },
+  { id:'potassium_flame', ing:['potassium','heat'],    icon:'💜', name:'Potassium Flame Test',   type:'chemical', color:'#a855f7', fx:'sparkle', equation:'K⁺ + heat → K* → emission (lilac)', fact:'Potassium salts produce a lilac-violet flame. The colour is best seen through blue cobalt glass.', xp:160, hint:'A salt emits a lilac hue when excited in a flame...', hintsExtra:['K emission has a lilac visible component.','KNO₃ + Bunsen Flame → lilac/violet flame.'], concept:'Quantised Energy Levels: relaxation releases a photon whose colour matches the energy gap.' },
+  { id:'magnesium_burn', ing:['magnesium','heat'],     icon:'⚡', name:'Magnesium Combustion',   type:'chemical', color:'#e0e7ff', fx:'sparkle', equation:'2Mg(s) + O₂(g) → 2MgO(s)', fact:'Magnesium burns with a blinding white light. It\'s so energetic it can even burn inside CO₂ fire extinguishers!', xp:170, hint:'A silvery metal that burns with blinding white-hot light...', hintsExtra:['Mg combustion is intensely exothermic.','Magnesium + Bunsen Flame → Blinding white light.'], concept:'Exothermic Combustion: oxidation releases immense energy.' },
+  { id:'copper_fire',  ing:['copper','heat'],          icon:'🟢', name:'Copper Flame Emission',  type:'chemical', color:'#10b981', fx:'greenfire', equation:'Cu²⁺ + heat → Cu* → emission (blue-green)', fact:'Copper salts produce a vivid blue-green flame. This is used in fireworks and stellar spectroscopy!', xp:160, hint:'Heat a blue metal salt and watch it turn the flame green...', hintsExtra:['Transition metals have unique emission spectra.','Copper Sulfate + Bunsen Flame → blue-green.'], concept:'Transition Metal Spectroscopy: d-orbitals emit characteristic wavelengths.' },
+  { id:'carbon_filter',ing:['carbon','water'],         icon:'🌿', name:'Purified Water',         type:'physical', color:'#d1fae5', fx:'absorb', equation:'C(activated) + Contaminants → adsorption', fact:'Activated charcoal has enormous surface area. Impurities adhere to it via van der Waals forces (adsorption).', xp:120, hint:'A black porous solid cleans water...', hintsExtra:['It\'s surface-sticking, not dissolving.','Activated Carbon + Water → adsorption.'], concept:'Adsorption: molecules cling to a surface.' },
+  { id:'rust',         ing:['iron','water'],           icon:'🟫', name:'Iron Rusting',           type:'chemical', color:'#b45309', fx:'drip', equation:'4Fe + 3O₂ + 6H₂O → 2Fe₂O₃·3H₂O', fact:'Iron corrodes via an electrochemical process forming hydrated iron(III) oxide (rust).', xp:140, hint:'Leave iron in water and something orange appears...', hintsExtra:['Oxidation is electron loss.','Iron + Water → rust.'], concept:'Electrochemical Corrosion: anode-cathode cell forms on the metal.' },
+  { id:'iron_sulfur',  ing:['iron','sulfur'],          icon:'⚫', name:'Iron Sulfide',           type:'chemical', color:'#44403c', fx:'greenfire', equation:'Fe(s) + S(s) →(Δ) FeS(s)', fact:'When iron and sulfur are heated, an exothermic reaction forms iron(II) sulfide — a black solid.', xp:140, hint:'Two elements react under heat to form a black compound...', hintsExtra:['The reaction is self-sustaining.','Iron Filings + Sulfur + heat → FeS.'], concept:'Mixture vs Compound: compounds have entirely new properties.' },
+  { id:'starch_iodine', ing:['starch','iodine'],       icon:'🔮', name:'Iodine–Starch Test',     type:'chemical', color:'#1e1b4b', fx:'glow', equation:'I₃⁻ + amylose → inclusion complex', fact:'Triiodide ions slot into the amylose coils of starch, forming an inclusion complex that appears deep blue-black.', xp:170, hint:'A halogen turns blue-black when it finds a carbohydrate...', hintsExtra:['A classic qualitative indicator.','Iodine + Starch → blue-black.'], concept:'Host-Guest Chemistry: iodine acts as a "guest" inside the starch "host".' },
+  { id:'ammonia_copper', ing:['ammonia','copper'],     icon:'💙', name:'Tetraamminecopper(II)',  type:'chemical', color:'#1d4ed8', fx:'glow', equation:'Cu²⁺ + 4NH₃ → [Cu(NH₃)₄]²⁺', fact:'Ammonia donates electrons to Cu²⁺, forming a deep-blue coordination complex.', xp:190, hint:'A base forms a vivid blue complex with a metal ion...', hintsExtra:['Ligands are electron-pair donors.','Ammonia + Copper Sulfate → deep navy blue.'], concept:'Coordination Chemistry: transition metals accept lone pairs from ligands.' },
+  { id:'salt_ice',     ing:['salt','ice'],             icon:'🌡️', name:'Freezing Point Drop',    type:'physical', color:'#93c5fd', fx:'freeze', equation:'ΔTf = Kf × m × i', fact:'Salt dissolves on the ice, producing ions that disrupt the crystal lattice, depressing the freezing point.', xp:120, hint:'An ionic compound mixed with ice drops freezing temps...', hintsExtra:['Depends on particle count.','Salt + Ice → melt below 0°C.'], concept:'Colligative Properties: properties dependent on dissolved particle count.' },
+  { id:'ammonia_water', ing:['ammonia','water'],       icon:'🔵', name:'Aqueous Ammonia',        type:'chemical', color:'#34d399', fx:'bigbubbles', equation:'NH₃(g) + H₂O(l) ⇌ NH₄⁺ + OH⁻', fact:'Ammonia is highly soluble in water and partially ionises producing OH⁻ ions (a weak base).', xp:130, hint:'A pungent gas dissolves to form a basic solution...', hintsExtra:['NH₃ hydrogen-bonds with water.','Ammonia + Water → basic pH.'], concept:'Weak Base Equilibrium: partially ionises in water.' },
+  { id:'sodium_water', ing:['sodium','water'],         icon:'💥', name:'Sodium Explosion',       type:'chemical', color:'#fbbf24', fx:'bigbubbles', equation:'2Na + 2H₂O → 2NaOH + H₂↑', fact:'Sodium reacts violently with water, releasing hydrogen gas which can ignite.', xp:200, hint:'An alkali metal reacts violently with water...', hintsExtra:['Alkali metals react vigorously.','Sodium + Water → NaOH + H₂.'], concept:'Group 1 Reactivity: vigorously reduce H⁺ to H₂ gas.' },
+  { id:'hydrogen_perox_iron', ing:['hydrogen','iron'], icon:'🫧', name:'Fenton\'s Reaction',      type:'chemical', color:'#ecfdf5', fx:'foam', equation:'Fe²⁺ + H₂O₂ → Fe³⁺ + OH• + OH⁻', fact:'Iron(II) catalyses hydrogen peroxide decomposition into highly reactive hydroxyl radicals.', xp:180, hint:'A metal catalyst breaks down hydrogen peroxide...', hintsExtra:['Produces hydroxyl radicals.','Iron + Hydrogen Peroxide → Fenton\'s Reagent.'], concept:'Radical Chemistry: OH• is highly reactive.' },
+  { id:'magnesium_vinegar', ing:['magnesium','vinegar'], icon:'🌡️', name:'Magnesium Dissolution', type:'chemical', color:'#d1fae5', fx:'bigbubbles', equation:'Mg + 2CH₃COOH → Mg(CH₃COO)₂ + H₂↑', fact:'Magnesium displaces hydrogen in acetic acid, releasing hydrogen gas.', xp:160, hint:'A reactive metal dissolves in a weak acid...', hintsExtra:['Metals above hydrogen displace H₂.','Magnesium + Vinegar → H₂ bubbles.'], concept:'Activity Series: reactive metals displace less reactive ones.' },
+  { id:'copper_sulfate_iron', ing:['copper','iron'],   icon:'🔶', name:'Displacement Reaction',  type:'chemical', color:'#b45309', fx:'sparkle', equation:'Fe + CuSO₄ → FeSO₄ + Cu', fact:'Iron is more reactive than copper, displacing Cu²⁺ from solution. Copper metal plates onto the iron!', xp:175, hint:'A more reactive metal displaces a less reactive one...', hintsExtra:['Iron pushes out copper.','Iron + Copper Sulfate → Cu plates out.'], concept:'Single-Displacement Redox: simultaneous oxidation and reduction.' },
+  { id:'iodine_starch_heat', ing:['starch','heat'],    icon:'🌑', name:'Starch Hydrolysis',      type:'chemical', color:'#f97316', fx:'steam', equation:'Starch + H₂O →(Δ) Glucose', fact:'Heating starch breaks the glycosidic bonds, hydrolysing it into glucose monomers.', xp:155, hint:'Heat breaks down a polymer...', hintsExtra:['Hydrolysis of bonds.','Starch + Heat → glucose.'], concept:'Hydrolysis: water splits polymer bonds.' },
+  { id:'lemon_baking', ing:['lemon','baking_soda'],    icon:'🍋', name:'Citric Acid Fizz',       type:'chemical', color:'#fde68a', fx:'bigbubbles', equation:'3NaHCO₃ + C₆H₈O₇ → Na₃C₆H₅O₇ + 3H₂O + 3CO₂↑', fact:'Citric acid and sodium bicarbonate react to release CO₂ — the exact reaction in bath bombs!', xp:145, hint:'Triprotic acid meets a base...', hintsExtra:['Triple the fizz.','Lemon + Baking Soda → Bath bomb reaction!'], concept:'Stoichiometry: exact ratios dictate the reaction.' },
+  { id:'ammonia_iodine', ing:['ammonia','iodine'],     icon:'💥', name:'Nitrogen Triiodide',      type:'chemical', color:'#7c3aed', fx:'glow', equation:'8NH₃ + 3I₂ → NI₃·NH₃ + 3NH₄I', fact:'Produces nitrogen triiodide (NI₃), which when dry is an incredibly sensitive contact explosive.', xp:210, hint:'Nitrogen + halogen = sensitive solid...', hintsExtra:['Extremely dangerous when dry.','Ammonia + Iodine → Contact explosive.'], concept:'Contact Explosives: Highly strained bonds are very unstable.' },
+  { id:'sulfur_burn',  ing:['sulfur','heat'],          icon:'🔵', name:'Sulfur Combustion',      type:'chemical', color:'#fef08a', fx:'greenfire', equation:'S + O₂ →(Δ) SO₂', fact:'Sulfur burns with a blue flame, producing toxic sulfur dioxide (SO₂).', xp:155, hint:'A yellow nonmetal burns blue...', hintsExtra:['Produces SO₂.','Sulfur + Heat → Blue flame.'], concept:'Combustion of Nonmetals: forms acidic oxides.' },
+  { id:'hydrogen_perox_decomp', ing:['hydrogen','heat'], icon:'💨', name:'H₂O₂ Decomposition',  type:'chemical', color:'#d1fae5', fx:'foam', equation:'2H₂O₂ →(Δ) 2H₂O + O₂', fact:'Heat dramatically accelerates the decomposition of hydrogen peroxide into water and oxygen.', xp:145, hint:'An unstable oxidiser decomposes when heated...', hintsExtra:['Heat causes decomposition.','Hydrogen Peroxide + Heat → Oxygen gas.'], concept:'Catalytic Decomposition: lower activation energy pathways.' },
+  { id:'copper_vinegar', ing:['copper','vinegar'],     icon:'🟩', name:'Verdigris Formation',    type:'chemical', color:'#10b981', fx:'sparkle', equation:'2Cu + 4CH₃COOH + O₂ → 2Cu(CH₃COO)₂ + 2H₂O', fact:'Copper reacts with acetic acid to form a blue-green patina known as verdigris.', xp:165, hint:'A reddish metal turns green in acid...', hintsExtra:['Forms copper acetate.','Copper + Vinegar → Verdigris.'], concept:'Atmospheric Corrosion: metals oxidise in acid and oxygen.' },
+  { id:'carbon_sulfur', ing:['carbon','sulfur'],       icon:'🌋', name:'Carbon Disulfide',       type:'chemical', color:'#d97706', fx:'steam', equation:'C + 2S →(Δ) CS₂', fact:'At high temperatures, carbon and sulfur form carbon disulfide — a highly flammable solvent.', xp:175, hint:'Two nonmetals combine at high temp...', hintsExtra:['Produces a volatile liquid.','Carbon + Sulfur → CS₂.'], concept:'High-Temperature Synthesis: overcomes kinetic barriers.' },
+  { id:'potassium_water', ing:['potassium','water'],   icon:'💥', name:'Endothermic Dissolving',    type:'chemical', color:'#a855f7', fx:'bigbubbles', equation:'KNO₃(aq) + H₂O → K⁺ + NO₃⁻', fact:'Potassium nitrate dissolves endothermically — it absorbs heat, making the solution feel cold!', xp:130, hint:'A salt dissolves and absorbs heat...', hintsExtra:['The solution gets colder.','Potassium Nitrate + Water → Cold solution.'], concept:'Endothermic Dissolution: lattice energy exceeds hydration enthalpy.' },
+  { id:'milk_heat',    ing:['milk','heat'],            icon:'🥛', name:'Maillard Reaction',      type:'chemical', color:'#fef3c7', fx:'steam', equation:'Amino acids + sugars →(Δ) melanoidins', fact:'Heating milk triggers the Maillard reaction between amino acids and lactose, browning the milk.', xp:160, hint:'Heat causes a browning reaction...', hintsExtra:['Produces flavour compounds.','Milk + Heat → Maillard browning.'], concept:'Maillard Reaction: non-enzymatic browning.' },
+  { id:'zinc_vinegar',   ing:['zinc','vinegar'],      icon:'🫧', name:'Zinc Dissolution',        type:'chemical', color:'#d1fae5', fx:'bigbubbles', equation:'Zn + 2CH₃COOH → Zn(CH₃COO)₂ + H₂↑', fact:'Zinc dissolves in acetic acid, releasing hydrogen gas.', xp:170, hint:'A greyish metal dissolves in a weak acid...', hintsExtra:['Zinc displaces H₂.','Zinc + Vinegar → Hydrogen gas.'], concept:'Activity Series: metals above hydrogen displace H₂.' },
+  { id:'zinc_copper_sulfate', ing:['zinc','copper'],  icon:'🔶', name:'Galvanic Displacement',   type:'chemical', color:'#b45309', fx:'sparkle', equation:'Zn + CuSO₄ → ZnSO₄ + Cu', fact:'Zinc oxidises and copper reduces — this galvanic displacement powers zinc-copper batteries!', xp:180, hint:'A more reactive metal kicks out a less reactive one...', hintsExtra:['Zn > Cu.','Zinc + Copper Sulfate → Copper plates out.'], concept:'Galvanic Displacement: spontaneous redox.' },
+  { id:'chlorine_water',  ing:['chlorine','water'],   icon:'🟡', name:'Chlorine Dissolution',    type:'chemical', color:'#d9f99d', fx:'bigbubbles', equation:'Cl₂ + H₂O ⇌ HCl + HOCl', fact:'Chlorine gas dissolves to form hypochlorous acid (HOCl) — the active disinfectant in swimming pools.', xp:200, hint:'A halogen gas reacts with water...', hintsExtra:['Forms pool disinfectant.','Chlorine + Water → Hypochlorous acid.'], concept:'Disproportionation: simultaneously oxidises and reduces.' },
+  { id:'chlorine_sodium',  ing:['chlorine','sodium'],  icon:'🧂', name:'NaCl Synthesis',type:'chemical', color:'#fef9c3', fx:'sparkle', equation:'2Na + Cl₂ → 2NaCl', fact:'Sodium burns in chlorine gas to form table salt. A perfect illustration of ionic bonding.', xp:220, hint:'An alkali metal burns in a halogen gas...', hintsExtra:['Produces an everyday condiment.','Sodium + Chlorine → Table salt.'], concept:'Ionic Bond Formation: electron transfer.' },
+  { id:'ethanol_combustion', ing:['ethanol','heat'],  icon:'🔥', name:'Ethanol Combustion',       type:'chemical', color:'#fbbf24', fx:'greenfire', equation:'C₂H₅OH + 3O₂ → 2CO₂ + 3H₂O', fact:'Ethanol burns in oxygen with a nearly invisible blue flame. It is complete combustion.', xp:180, hint:'An alcohol burns completely...', hintsExtra:['Blue flame.','Ethanol + Heat → CO₂ + H₂O.'], concept:'Complete Combustion: full oxidation.' },
+  { id:'ethanol_acid', ing:['ethanol','vinegar'],     icon:'🍷', name:'Esterification',           type:'chemical', color:'#fce7f3', fx:'steam', equation:'CH₃COOH + C₂H₅OH ⇌ CH₃COOC₂H₅ + H₂O', fact:'Acetic acid and ethanol form ethyl acetate — the fruity smelling ester in nail polish remover.', xp:195, hint:'Alcohol + acid = sweet smelling ester...', hintsExtra:['Produces ethyl acetate.','Ethanol + Vinegar → Esterification.'], concept:'Esterification Equilibrium.' },
+  { id:'glucose_fermentation', ing:['glucose','heat'], icon:'🍺', name:'Fermentation',  type:'chemical', color:'#fbbf24', fx:'bigbubbles', equation:'C₆H₁₂O₆ →(yeast) 2C₂H₅OH + 2CO₂', fact:'Yeast converts glucose to ethanol and CO₂ via anaerobic fermentation.', xp:190, hint:'Sugar into alcohol and gas...', hintsExtra:['Needs yeast.','Glucose + Heat (optimal) → Fermentation.'], concept:'Anaerobic Fermentation.' },
+  { id:'glucose_lemon',  ing:['glucose','lemon'],     icon:'🩺', name:'Reducing Sugar Test',      type:'chemical', color:'#fde68a', fx:'drip', equation:'Glucose + Cu²⁺ → Cu₂O↓ (brick red)', fact:'Glucose reduces Cu²⁺ to Cu⁺, forming a brick-red Cu₂O precipitate. (Benedict\'s test).', xp:175, hint:'A reducing sugar donates electrons...', hintsExtra:['Forms brick-red precipitate.','Glucose + Lemon(acid) → Reduction.'], concept:'Reducing Sugars.' },
+  { id:'calcium_water',  ing:['calcium','water'],     icon:'💥', name:'Calcium + Water',          type:'chemical', color:'#f0fdf4', fx:'bigbubbles', equation:'Ca + 2H₂O → Ca(OH)₂ + H₂↑', fact:'Calcium reacts steadily with water, producing calcium hydroxide (limewater) and hydrogen.', xp:185, hint:'Alkaline earth metal reacts with water...', hintsExtra:['Forms limewater.','Calcium + Water → H₂ gas.'], concept:'Group 2 Reactivity.' },
+  { id:'calcium_acid',   ing:['calcium','vinegar'],   icon:'🫧', name:'Calcium Dissolution',     type:'chemical', color:'#ecfdf5', fx:'bigbubbles', equation:'Ca + 2CH₃COOH → Ca(CH₃COO)₂ + H₂↑', fact:'Calcium dissolves vigorously in acetic acid, producing hydrogen gas.', xp:165, hint:'Alkaline earth metal reacts with a weak acid...', hintsExtra:['Produces calcium acetate.','Calcium + Vinegar → Vigorous reaction.'], concept:'Metal Acid Reactions.' }
+];
+
+const TIER_DEFS = [
+  { num: 1, name: 'Basic Elements', sub: 'The foundation of chemistry', icon: '🧪', level: 1, ids: ['baking_soda','vinegar','water','sodium','potassium','magnesium','ice','heat','salt','lemon'] },
+  { num: 2, name: 'Advanced Reagents', sub: 'Metals & oxidisers', icon: '⚗️', level: 3, ids: ['milk','oil','sulfur','carbon','hydrogen','copper'] },
+  { num: 3, name: 'Expert Reagents', sub: 'Halogens & radicals', icon: '🔬', level: 5, ids: ['iron','ammonia','iodine','starch'] },
+  { num: 4, name: 'Master Reagents', sub: 'Organic & biochem', icon: '🧬', level: 8, ids: ['zinc','chlorine','ethanol','glucose','calcium'] }
+];
+
+const CHALLENGES = [
+  { id:'ch_first',    cat:'🌱 Beginner',  name:'First Reaction',     desc:'Complete your very first reaction',       icon:'🎉', reward:'+200 XP', xp:200, chem:'Any + Any → ?', progress: g => Math.min(g.totalReactions, 1), total:1, condition: g => g.totalReactions >= 1 },
+  { id:'ch_5rxn',     cat:'🌱 Beginner',  name:'Five Reactions',     desc:'Complete 5 reactions total',             icon:'🧪', reward:'+250 XP', xp:250, chem:'Keep mixing!', progress: g => Math.min(g.totalReactions, 5), total:5, condition: g => g.totalReactions >= 5 },
+  { id:'ch_states',   cat:'🌱 Beginner',  name:'State Master',       desc:'Discover all 3 state changes',           icon:'🌡️', reward:'+300 XP', xp:300, chem:'H₂O(s/l/g) transitions', progress: g => ['steam','frozen','melt'].filter(r=>g.found.has(r)).length, total:3, condition: g => ['steam','frozen','melt'].every(r=>g.found.has(r)) },
+  { id:'ch_kitchen',  cat:'🌱 Beginner',  name:'Kitchen Chemist',    desc:'Discover 3 food/kitchen reactions',      icon:'🍋', reward:'+280 XP', xp:280, chem:'Food science!', progress: g => ['volcano','lemonade','curds','lemon_baking','saltwater'].filter(r=>g.found.has(r)).length, total:3, condition: g => ['volcano','lemonade','curds','lemon_baking','saltwater'].filter(r=>g.found.has(r)).length >= 3 },
+  { id:'ch_streak3',  cat:'🔬 Intermediate', name:'On Fire!',        desc:'Build a 3-reaction streak',              icon:'🔥', reward:'+150 XP', xp:150, chem:'3× in a row!', progress: g => Math.min(g.maxStreak, 3), total:3, condition: g => g.maxStreak >= 3 },
+  { id:'ch_acid_base',cat:'🔬 Intermediate', name:'Acid-Base Pro',   desc:'Discover 4 acid-base reactions',         icon:'⚗️', reward:'+350 XP', xp:350, chem:'H⁺ + OH⁻ → H₂O', progress: g => ['volcano','lemonade','ammonia_water','lemon_baking'].filter(r=>g.found.has(r)).length, total:4, condition: g => ['volcano','lemonade','ammonia_water','lemon_baking'].filter(r=>g.found.has(r)).length >= 4 },
+  { id:'ch_chemical', cat:'🔬 Intermediate', name:'Chemist in Training', desc:'Discover 7 chemical reactions',     icon:'🧫', reward:'+400 XP', xp:400, chem:'True bond-breaking!', progress: g => Math.min([...g.found].filter(id=>REACTIONS.find(r=>r.id===id)?.type==='chemical').length, 7), total:7, condition: g => [...g.found].filter(id=>REACTIONS.find(r=>r.id===id)?.type==='chemical').length >= 7 },
+  { id:'ch_redox',    cat:'🔬 Intermediate', name:'Redox Ranger',    desc:'Discover 3 redox (electron transfer) reactions', icon:'⚡', reward:'+380 XP', xp:380, chem:'OIL RIG!', progress: g => ['rust','copper_sulfate_iron','magnesium_vinegar','sodium_water'].filter(r=>g.found.has(r)).length, total:3, condition: g => ['rust','copper_sulfate_iron','magnesium_vinegar','sodium_water'].filter(r=>g.found.has(r)).length >= 3 },
+  { id:'ch_halfway',  cat:'🔬 Intermediate', name:'Halfway There',   desc:'Discover 17 of 33 reactions',           icon:'🔭', reward:'+600 XP', xp:600, chem:'17 / 33 reactions', progress: g => Math.min(g.found.size, 17), total:17, condition: g => g.found.size >= 17 },
+  { id:'ch_streak5',  cat:'🏆 Advanced',  name:'Unstoppable!',       desc:'Build a 5-reaction streak',              icon:'⚡', reward:'+500 XP', xp:500, chem:'5× streak = pro!', progress: g => Math.min(g.maxStreak, 5), total:5, condition: g => g.maxStreak >= 5 },
+  { id:'ch_flames',   cat:'🏆 Advanced',  name:'Spectroscopist',     desc:'Discover all 4 flame tests', icon:'🔬', reward:'+500 XP', xp:500, chem:'Na, K, Cu, Mg emission', progress: g => ['sodium_flame','potassium_flame','copper_fire','magnesium_burn'].filter(r=>g.found.has(r)).length, total:4, condition: g => ['sodium_flame','potassium_flame','copper_fire','magnesium_burn'].every(r=>g.found.has(r)) },
+  { id:'ch_metals',   cat:'🏆 Advanced',  name:'Metallurgist',       desc:'Discover all metal reactions',           icon:'⚙️', reward:'+500 XP', xp:500, chem:'Fe, Cu, Mg, Na reactions', progress: g => ['rust','copper_fire','iron_sulfur','magnesium_burn','copper_sulfate_iron','copper_vinegar'].filter(r=>g.found.has(r)).length, total:6, condition: g => ['rust','copper_fire','iron_sulfur','magnesium_burn','copper_sulfate_iron','copper_vinegar'].every(r=>g.found.has(r)) },
+  { id:'ch_streak8',  cat:'🏆 Advanced',  name:'Chain Reaction!',    desc:'Build an 8-reaction streak',             icon:'🔗', reward:'+800 XP', xp:800, chem:'8× streak!', progress: g => Math.min(g.maxStreak, 8), total:8, condition: g => g.maxStreak >= 8 },
+  { id:'ch_all',      cat:'🏆 Advanced',  name:'Master Chemist',     desc:'Discover all 33 reactions',              icon:'🏆', reward:'+2000 XP', xp:2000, chem:'All reactions mastered!', progress: g => g.found.size, total: REACTIONS.length, condition: g => g.found.size >= REACTIONS.length }
+];
+
+let STATE = { mix: [], found: new Set(), score: 0, xp: 0, level: 1, streak: 0, maxStreak: 0, totalReactions: 0, completedChallenges: new Set(), isReacting: false, lastResult: null, hintTarget: null, hintsRevealed: new Set() };
+const XP_PER_LEVEL = [0,200,500,900,1400,2000,2700,3600,4700,6000,7500,9200,11000,13100,15500,18200,21300,24800,28800,33400,Infinity];
+const TOTAL = REACTIONS.length;
+const NO_REACTIONS = {};
+
+// ============================================================
+// DOM ELEMENTS & AUDIO
+// ============================================================
+const slot1 = document.getElementById('slot-1');
+const slot2 = document.getElementById('slot-2');
+const reactBtn = document.getElementById('react-btn');
+const beakerLiquid = document.getElementById('beaker-liquid');
+const beakerWrap = document.getElementById('beaker-wrap');
+const fxCanvas = document.getElementById('fx-canvas');
+const fxCtx = fxCanvas.getContext('2d');
+
+let audioCtx;
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function tone(freq, type, dur, vol, sweepTo) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = type; osc.frequency.value = freq;
+  if (sweepTo) osc.frequency.exponentialRampToValueAtTime(sweepTo, audioCtx.currentTime + dur);
+  g.gain.setValueAtTime(vol, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  osc.connect(g); g.connect(audioCtx.destination);
+  osc.start(); osc.stop(audioCtx.currentTime + dur);
+}
+const SFX = {
+  drop:    () => tone(500, 'sine', 0.12, 0.1, 300),
+  clear:   () => tone(250, 'triangle', 0.1, 0.08),
+  bubble:  () => { for(let i=0;i<10;i++) setTimeout(()=>tone(300+Math.random()*400,'sine',0.1,0.05),i*80); },
+  hiss:    () => { for(let i=0;i<25;i++) setTimeout(()=>tone(800+Math.random()*1200,'sawtooth',0.04,0.025),i*35); },
+  sparkle: () => { [500,700,900,1100].forEach((f,i)=>setTimeout(()=>tone(f,'triangle',0.12,0.08),i*60)); },
+  success: () => { [330,392,523,659].forEach((f,i)=>setTimeout(()=>tone(f,'sine',0.18,0.12),i*90)); },
+  levelup: () => { [262,330,392,523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,'sine',0.2,0.15),i*70)); },
+  plop:    () => tone(200, 'sine', 0.2, 0.12, 100),
+  streakBreak: () => { [400,300,200,150].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',0.1,0.08),i*60)); },
+};
+
+// ============================================================
+// CANVAS PARTICLES
+// ============================================================
+let particles = [];
+let animFrameId;
+
+function resizeCanvas() {
+  fxCanvas.width  = beakerWrap.offsetWidth  + 240;
+  fxCanvas.height = beakerWrap.offsetHeight + 200;
+}
+
+function launchParticles(type, color) {
+  particles = [];
+  cancelAnimationFrame(animFrameId);
+  const cx = fxCanvas.width / 2;
+  const by = fxCanvas.height - 40;
+
+  const configs = {
+    bigbubbles: { n:80, spawn:()=>({ x:cx+(Math.random()-.5)*70, y:by-Math.random()*40, vx:(Math.random()-.5)*1.5, vy:-Math.random()*4-1.5, size:Math.random()*10+4, life:1, decay:0.012, type:'bubble' }) },
+    glow:       { n:50, spawn:()=>({ x:cx+(Math.random()-.5)*100, y:by-Math.random()*80, vx:(Math.random()-.5)*5, vy:(Math.random()-.5)*5, size:Math.random()*5+2, life:1, decay:0.018, type:'glow', color }) },
+    steam:      { n:40, spawn:()=>({ x:cx+(Math.random()-.5)*60, y:by-Math.random()*30, vx:(Math.random()-.5)*2, vy:-Math.random()*2.5-.5, size:Math.random()*22+12, life:1, decay:0.01, type:'steam' }) },
+    freeze:     { n:35, spawn:()=>({ x:cx+(Math.random()-.5)*70, y:by-Math.random()*80, vx:(Math.random()-.5)*.5, vy:(Math.random()-.5)*.5, size:Math.random()*12+5, life:1, decay:0.006, type:'crystal' }) },
+    drip:       { n:25, spawn:()=>({ x:cx+(Math.random()-.5)*60, y:by-Math.random()*50, vx:(Math.random()-.5)*1, vy:Math.random()*3+1, size:Math.random()*5+3, life:1, decay:0.015, type:'drip', color }) },
+    sparkle:    { n:60, spawn:()=>({ x:cx+(Math.random()-.5)*90, y:by-Math.random()*90, vx:(Math.random()-.5)*4, vy:(Math.random()-.5)*4, size:Math.random()*4+2, life:1, decay:0.02, type:'star', color }) },
+    galaxy:     { n:80, spawn:()=>({ x:cx+(Math.random()-.5)*100, y:by-Math.random()*100, vx:(Math.random()-.5)*3, vy:(Math.random()-.5)*3, size:Math.random()*3+1, life:1, decay:0.015, type:'star', color:'#e879f9' }) },
+    foam:       { n:100,spawn:()=>({ x:cx+(Math.random()-.5)*80, y:by-Math.random()*20, vx:(Math.random()-.5)*2, vy:-Math.random()*5-2, size:Math.random()*14+6, life:1, decay:0.009, type:'foam' }) },
+    greenfire:  { n:60, spawn:()=>({ x:cx+(Math.random()-.5)*60, y:by-Math.random()*30, vx:(Math.random()-.5)*2, vy:-Math.random()*4-1, size:Math.random()*8+4, life:1, decay:0.014, type:'glow', color:'#10b981' }) },
+    oil:        { n:40, spawn:()=>({ x:cx+(Math.random()-.5)*70, y:by-Math.random()*60, vx:(Math.random()-.5)*.8, vy:(Math.random()-.5)*.8, size:Math.random()*10+5, life:1, decay:0.008, type:'oil' }) },
+    absorb:     { n:40, spawn:()=>({ x:cx+(Math.random()-.5)*80, y:by-Math.random()*80, vx:(Math.random()-.5)*2, vy:-Math.random()*2, size:Math.random()*6+3, life:1, decay:0.016, type:'bubble' }) },
+    plop:       { n:15, spawn:()=>({ x:cx+(Math.random()-.5)*50, y:by-Math.random()*30, vx:(Math.random()-.5)*2, vy:-Math.random()*2, size:Math.random()*8+4, life:1, decay:0.02, type:'bubble' }) },
+  };
+
+  const cfg = configs[type] || configs.plop;
+  for (let i = 0; i < cfg.n; i++) particles.push(cfg.spawn());
+
+  function draw() {
+    fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+    let alive = false;
+    particles.forEach(p => {
+      if (p.life <= 0) return;
+      alive = true;
+      p.x += p.vx; p.y += p.vy; p.life -= p.decay;
+      fxCtx.save();
+      fxCtx.globalAlpha = Math.max(0, p.life);
+      switch(p.type) {
+        case 'bubble': fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.size, 0, Math.PI*2); fxCtx.fillStyle='rgba(255,255,255,0.5)'; fxCtx.fill(); fxCtx.strokeStyle='rgba(255,255,255,0.9)'; fxCtx.lineWidth=1.5; fxCtx.stroke(); break;
+        case 'glow': fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.size, 0, Math.PI*2); fxCtx.fillStyle = p.color; fxCtx.shadowColor = p.color; fxCtx.shadowBlur=14; fxCtx.fill(); break;
+        case 'steam': p.size += 0.4; fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.size, 0, Math.PI*2); fxCtx.fillStyle='rgba(220,230,255,0.35)'; fxCtx.fill(); break;
+        case 'crystal': fxCtx.fillStyle='rgba(186,230,253,0.9)'; fxCtx.shadowColor='#bae6fd'; fxCtx.shadowBlur=8; fxCtx.fillRect(p.x-p.size/2, p.y-p.size/2, p.size, p.size); break;
+        case 'drip': fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.size, 0, Math.PI*2); fxCtx.fillStyle = p.color || '#60a5fa'; fxCtx.fill(); break;
+        case 'star': drawStar(fxCtx, p.x, p.y, 4, p.size, p.size*.4); fxCtx.fillStyle = p.color || '#ffd93d'; fxCtx.shadowColor=p.color; fxCtx.shadowBlur=8; fxCtx.fill(); break;
+        case 'foam': fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.size, 0, Math.PI*2); fxCtx.fillStyle='rgba(209,250,229,0.7)'; fxCtx.fill(); fxCtx.strokeStyle='rgba(255,255,255,0.5)'; fxCtx.lineWidth=1; fxCtx.stroke(); break;
+        case 'oil': fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.size, 0, Math.PI*2); fxCtx.fillStyle='rgba(254,240,138,0.6)'; fxCtx.fill(); break;
+      }
+      fxCtx.restore();
+    });
+    if (alive && STATE.isReacting) animFrameId = requestAnimationFrame(draw);
+    else fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+  }
+  draw();
+}
+
+function drawStar(ctx, x, y, spikes, outerR, innerR) {
+  let rot = (Math.PI/2)*3, step = Math.PI/spikes;
+  ctx.beginPath(); ctx.moveTo(x, y - outerR);
+  for (let i=0;i<spikes;i++) {
+    ctx.lineTo(x+Math.cos(rot)*outerR, y+Math.sin(rot)*outerR); rot+=step;
+    ctx.lineTo(x+Math.cos(rot)*innerR, y+Math.sin(rot)*innerR); rot+=step;
+  }
+  ctx.lineTo(x, y-outerR); ctx.closePath();
+}
+
+// ============================================================
+// UI & PROGRESS LOGIC
+// ============================================================
+function blendColors(c1, c2) {
+  const h = c => { const v=parseInt(c.replace('#','').padStart(6,'0'),16); return [(v>>16)&255,(v>>8)&255,v&255]; };
+  try { const a=h(c1),b=h(c2); return `rgb(${Math.round((a[0]+b[0])/2)},${Math.round((a[1]+b[1])/2)},${Math.round((a[2]+b[2])/2)})`;
+  } catch(e) { return c1; }
+}
+
+function updateBeakerVisual() {
+  const m = STATE.mix;
+  if (!m.length) { beakerLiquid.style.height='0%'; beakerLiquid.style.background='transparent'; return; }
+  if (m.length === 1) { beakerLiquid.style.height='32%'; beakerLiquid.style.background=m[0].color; }
+  else { beakerLiquid.style.height='72%'; beakerLiquid.style.background=blendColors(m[0].color, m[1].color); }
+}
+
+function updateSlots() {
+  [slot1, slot2].forEach((s, i) => {
+    if (STATE.mix[i]) { s.textContent=STATE.mix[i].emoji; s.classList.add('filled'); }
+    else { s.textContent=''; s.classList.remove('filled'); }
+  });
+  reactBtn.disabled = STATE.mix.length !== 2;
+}
+
+function updateScoreUI() {
+  document.getElementById('score-val').textContent = STATE.score.toLocaleString();
+  const sv = document.getElementById('streak-val');
+  sv.textContent = STATE.streak + (STATE.streak >= 3 ? '🔥' : '');
+  if (STATE.streak >= 3) sv.classList.add('streak-fire'); else sv.classList.remove('streak-fire');
+  document.getElementById('found-val').textContent = `${STATE.found.size}/${TOTAL}`;
+  const lvl = STATE.level;
+  const xpNeeded = XP_PER_LEVEL[lvl] - XP_PER_LEVEL[lvl-1];
+  const xpProgress = STATE.xp - XP_PER_LEVEL[lvl-1];
+  document.getElementById('xp-fill').style.width = Math.min(100, (xpProgress/xpNeeded)*100) + '%';
+  document.getElementById('level-badge').textContent = `LVL ${lvl}`;
+  
+  updateComboMeter();
+  updateShelfTiers();
+  updateHotIngredients();
+}
+
+function checkLevelUp() {
+  while (STATE.level < XP_PER_LEVEL.length - 1 && STATE.xp >= XP_PER_LEVEL[STATE.level]) {
+    STATE.level++;
+    SFX.levelup();
+    floatScore(beakerWrap, `⬆️ LEVEL ${STATE.level}!`, '#ffd93d');
+  }
+}
+
+function floatScore(el, text, color='#ffd93d') {
+  const rect = el.getBoundingClientRect();
+  const d = document.createElement('div');
+  d.className = 'float-score';
+  d.textContent = text;
+  d.style.color = color;
+  d.style.left = (rect.left + rect.width/2 - 40) + 'px';
+  d.style.top  = (rect.top + rect.height/3) + 'px';
+  document.body.appendChild(d);
+  setTimeout(() => d.remove(), 1300);
+}
+
+// ============================================================
+// TIERED SHELF ACCORDION SYSTEM
+// ============================================================
+function getReactionsForTier(tierNum) {
+  let availableIds = [];
+  for (let i = 1; i <= tierNum; i++) {
+    const t = TIER_DEFS.find(td => td.num === i);
+    if (t) availableIds.push(...t.ids);
+  }
+  return REACTIONS.filter(rx => rx.ing.every(id => availableIds.includes(id))).map(rx => rx.id);
+}
+
+function getTierExclusiveReactionIds(tierNum) {
+  if (tierNum === 1) return getReactionsForTier(1);
+  const current = getReactionsForTier(tierNum);
+  const prev = getReactionsForTier(tierNum - 1);
+  return current.filter(id => !prev.includes(id));
+}
+
+function isTierComplete(tierNum) {
+  const rxIds = getTierExclusiveReactionIds(tierNum);
+  if (rxIds.length === 0) return true;
+  return rxIds.every(id => STATE.found.has(id));
+}
+
+function getUnlockedTierNum() {
+  let unlocked = 1;
+  for (let i = 2; i <= TIER_DEFS.length; i++) {
+    const tier = TIER_DEFS.find(t => t.num === i);
+    // Requires both level and completing the previous tier's reactions
+    if (STATE.level >= tier.level && isTierComplete(i - 1)) {
+      unlocked = i;
+    } else break;
+  }
+  return unlocked;
+}
+
+function isTierUnlocked(tierNum) {
+  return tierNum <= getUnlockedTierNum();
+}
+
+function buildShelfWithTiers() {
+  const grid = document.getElementById('shelf-grid');
+  const currentlyExpanded = Array.from(document.querySelectorAll('.shelf-tier-section:not(.collapsed)')).map(el => el.dataset.tier);
+  const activeTiers = currentlyExpanded.length ? currentlyExpanded : [getUnlockedTierNum().toString()];
+
+  grid.innerHTML = '';
+  TIER_DEFS.forEach(tier => {
+    const unlocked = isTierUnlocked(tier.num);
+    const levelNeeded = tier.level;
+    
+    const prevTierNum = tier.num - 1;
+    const rxIds = prevTierNum >= 1 ? getTierExclusiveReactionIds(prevTierNum) : [];
+    const rxFound = rxIds.filter(id => STATE.found.has(id)).length;
+    const rxPct = rxIds.length ? Math.min(99, Math.round((rxFound / rxIds.length) * 100)) : 100;
+    const levelPct = Math.min(99, Math.round((STATE.level / levelNeeded) * 100));
+    
+    let xpPct = 100;
+    if (!unlocked) {
+       xpPct = isTierComplete(prevTierNum) ? levelPct : rxPct;
+    }
+
+    const tierComplete = unlocked && isTierComplete(tier.num);
+    const isCollapsed = unlocked ? !activeTiers.includes(tier.num.toString()) : true;
+
+    const section = document.createElement('div');
+    section.className = 'shelf-tier-section tier-' + tier.num + (unlocked ? '' : ' tier-locked-section') + (isCollapsed ? ' collapsed' : '');
+    section.dataset.tier = tier.num.toString();
+
+    const badgeContent = tierComplete ? `<span class="tier-complete-pill">✅ Done!</span>` : unlocked ? tier.ids.length + ' chems' : 'Lv ' + levelNeeded;
+    const hdr = document.createElement('div');
+    hdr.className = 'shelf-tier-header';
+    hdr.innerHTML = `
+      <div class="tier-icon-pill">${tier.icon}</div>
+      <div class="tier-header-body">
+        <div class="tier-header-name">Tier ${tier.num} · ${tier.name}</div>
+        <div class="tier-header-sub">${tier.sub}</div>
+        ${!unlocked ? `<div class="tier-xp-bar"><div class="tier-xp-fill" style="width:${xpPct}%"></div></div>` : ''}
+      </div>
+      <div class="tier-badge">${badgeContent}</div>
+      <div class="tier-chevron">▼</div>
+    `;
+
+    if (unlocked) {
+      hdr.onclick = () => section.classList.toggle('collapsed');
+    } else {
+      hdr.onclick = () => showLockedTierReminder(tier.num);
+    }
+    section.appendChild(hdr);
+
+    if (!unlocked) {
+      const strip = document.createElement('div');
+      strip.className = 'tier-lock-strip';
+      const left = rxIds.length - rxFound;
+      if (left > 0 && tier.num > 1) {
+        strip.innerHTML = `🔒 Discover <strong>${left} more Tier ${prevTierNum} reaction${left===1?'':'s'}</strong> to unlock`;
+      } else {
+        strip.innerHTML = `🔒 Reach <strong>Level ${levelNeeded}</strong> to unlock ${tier.ids.length} new ingredients`;
+      }
+      section.appendChild(strip);
+    }
+
+    const bodyWrap = document.createElement('div');
+    bodyWrap.className = 'tier-body-wrapper';
+    const bodyInner = document.createElement('div');
+    bodyInner.className = 'tier-body-inner';
+    const tierGrid = document.createElement('div');
+    tierGrid.className = 'tier-grid';
+
+    tier.ids.forEach(id => {
+      const ing = INGREDIENTS.find(i => i.id === id);
+      if (!ing) return;
+      const btn = document.createElement('button');
+      btn.className = 'ing-btn' + (!unlocked ? ' locked' : '');
+      btn.id = 'ing-' + ing.id;
+      btn.style.borderColor = unlocked ? ing.color + '40' : 'transparent';
+      btn.innerHTML = `<span class="ing-emoji">${ing.emoji}</span><span class="ing-formula">${ing.formula}</span><span class="ing-name">${ing.name}</span><span class="ing-type">${ing.type}</span>`;
+      btn.onclick = () => addIngredient(ing);
+      tierGrid.appendChild(btn);
+    });
+
+    bodyInner.appendChild(tierGrid);
+    bodyWrap.appendChild(bodyInner);
+    section.appendChild(bodyWrap);
+    grid.appendChild(section);
+  });
+  document.getElementById('ing-count-label').textContent = INGREDIENTS.length + ' chemicals';
+}
+
+function updateShelfTiers() {
+  let needsRebuild = false;
+  TIER_DEFS.forEach(tier => {
+    const section = document.querySelector('.tier-' + tier.num);
+    if (section && section.classList.contains('tier-locked-section') && isTierUnlocked(tier.num)) needsRebuild = true;
+  });
+  if (needsRebuild) { buildShelfWithTiers(); return; }
+
+  TIER_DEFS.forEach(tier => {
+    const unlocked = isTierUnlocked(tier.num);
+    if (!unlocked) {
+      const prevTierNum = tier.num - 1;
+      const rxIds = prevTierNum >= 1 ? getTierExclusiveReactionIds(prevTierNum) : [];
+      const rxFound = rxIds.filter(id => STATE.found.has(id)).length;
+      const rxPct = rxIds.length ? Math.min(99, Math.round((rxFound / rxIds.length) * 100)) : 100;
+      const levelPct = Math.min(99, Math.round((STATE.level / tier.level) * 100));
+
+      let xpPct = 100;
+      if (!isTierComplete(prevTierNum)) xpPct = rxPct;
+      else xpPct = levelPct;
+
+      const fill = document.querySelector('.tier-' + tier.num + ' .tier-xp-fill');
+      if (fill) fill.style.width = xpPct + '%';
+      
+      const strip = document.querySelector('.tier-' + tier.num + ' .tier-lock-strip');
+      if (strip) {
+         const left = rxIds.length - rxFound;
+         if (left > 0 && tier.num > 1) {
+           strip.innerHTML = `🔒 Discover <strong>${left} more Tier ${prevTierNum} reaction${left===1?'':'s'}</strong> to unlock`;
+         } else {
+           strip.innerHTML = `🔒 Reach <strong>Level ${tier.level}</strong> to unlock ${tier.ids.length} new ingredients`;
+         }
+      }
+    } else {
+      const badge = document.querySelector('.tier-' + tier.num + ' .tier-badge');
+      if (badge && isTierComplete(tier.num) && !badge.querySelector('.tier-complete-pill')) {
+        badge.innerHTML = `<span class="tier-complete-pill">✅ Done!</span>`;
+      }
+    }
+  });
+}
+
+function showLockedTierReminder(tierNum) {
+  const tier = TIER_DEFS.find(t => t.num === tierNum);
+  if (!tier) return;
+  const prevTierNum = tier.num - 1;
+  const rxIds = getTierExclusiveReactionIds(prevTierNum);
+  const foundCount = rxIds.filter(id => STATE.found.has(id)).length;
+  const total = rxIds.length;
+  const pct = total ? Math.round((foundCount / total) * 100) : 0;
+
+  const msgEl = document.getElementById('tier-locked-msg');
+  const wrapEl = document.getElementById('tier-locked-progress-wrap');
+  const pbar = document.getElementById('tier-locked-pbar');
+  const pctText = document.getElementById('tier-locked-pct');
+
+  if (!isTierComplete(prevTierNum)) {
+     msgEl.innerHTML = `Discover all <strong>${total}</strong> possible reactions up to Tier ${prevTierNum} first before advancing!`;
+     wrapEl.style.display = 'block';
+     pbar.style.width = pct + '%';
+     pctText.textContent = `${foundCount} / ${total} Tier ${prevTierNum} reactions discovered`;
+  } else {
+     msgEl.innerHTML = `Previous reactions complete! Now reach <strong>Level ${tier.level}</strong> to unlock Tier ${tierNum}. Keep discovering and building streaks!`;
+     wrapEl.style.display = 'none';
+  }
+
+  openModal('modal-tier-locked');
+}
+
+// ============================================================
+// JOURNAL & CHALLENGES
+// ============================================================
+function buildJournal() {
+  const grid = document.getElementById('journal-grid');
+  grid.innerHTML = '';
+  REACTIONS.forEach(rx => {
+    const div = document.createElement('div');
+    div.className = 'jrx' + (STATE.found.has(rx.id) ? ' found' : '');
+    div.id = `jrx-${rx.id}`;
+    const typeLabel = { chemical:'⚗️ Chemical', physical:'🌈 Physical', state:'🌡️ State' }[rx.type] || rx.type;
+    const ings = rx.ing.map(id => {
+      const ing = INGREDIENTS.find(i=>i.id===id);
+      return ing ? `<span class="jrx-ing-tag">${ing.emoji} ${ing.formula}</span>` : '?';
+    });
+    const isFound = STATE.found.has(rx.id);
+    div.innerHTML = `
+      <div class="jrx-icon">${isFound ? rx.icon : '❓'}</div>
+      <div class="jrx-name">${isFound ? rx.name : '???'}</div>
+      <div class="jrx-type">${typeLabel}</div>
+      <div class="jrx-ingredients">${ings.join('')}</div>
+      ${isFound && rx.equation ? `<div class="jrx-equation">${rx.equation}</div>` : ''}
+      <div class="jrx-hint">${rx.hint}</div>
+    `;
+    grid.appendChild(div);
+  });
+  const n = STATE.found.size;
+  document.getElementById('jrn-count').textContent = n;
+  document.getElementById('jrn-total').textContent = TOTAL;
+  document.getElementById('jrn-pbar').style.width = (n/TOTAL*100)+'%';
+}
+
+function buildChallenges() {
+  const list = document.getElementById('challenges-list');
+  list.innerHTML = '';
+  const done = CHALLENGES.filter(c => STATE.completedChallenges.has(c.id)).length;
+  document.getElementById('ch-completed-count').textContent = done;
+  document.getElementById('ch-total-count').textContent = CHALLENGES.length;
+  const bonusXp = CHALLENGES.filter(c=>STATE.completedChallenges.has(c.id)).reduce((s,c)=>s+c.xp,0);
+  document.getElementById('ch-bonus-xp').textContent = bonusXp.toLocaleString();
+  const pct = Math.round(done/CHALLENGES.length*100);
+  document.getElementById('ch-pct').textContent = pct + '%';
+  document.getElementById('ch-overall-fill').style.width = pct + '%';
+
+  const cats = [...new Set(CHALLENGES.map(c=>c.cat))];
+  cats.forEach(cat => {
+    const catDiv = document.createElement('div');
+    catDiv.className = 'ch-category';
+    catDiv.innerHTML = `<div class="ch-cat-label">${cat}</div>`;
+    CHALLENGES.filter(c=>c.cat===cat).forEach(ch => {
+      const isDone = STATE.completedChallenges.has(ch.id);
+      const prog = ch.progress ? ch.progress(STATE) : (isDone ? ch.total : 0);
+      const total = ch.total || 1;
+      const pctFill = Math.min(100, Math.round(prog/total*100));
+
+      const div = document.createElement('div');
+      div.className = 'challenge-item' + (isDone ? ' challenge-done' : '');
+      div.innerHTML = `
+        <div class="ch-top-row">
+          <div class="challenge-icon">${isDone ? '✅' : ch.icon}</div>
+          <div class="challenge-info">
+            <div class="challenge-name">${ch.name}</div>
+            <div class="challenge-desc">${ch.desc}</div>
+            ${ch.chem ? `<div class="ch-chem-tag">${ch.chem}</div>` : ''}
+          </div>
+          <div class="ch-right">${isDone ? '<div class="ch-done-tag">✓ Done</div>' : `<div class="challenge-reward">${ch.reward}</div>`}</div>
+        </div>
+        ${!isDone ? `<div class="ch-progress-wrap"><div class="ch-progress-row"><span>Progress</span><span>${prog}/${total}</span></div><div class="ch-progress-track"><div class="ch-progress-fill" style="width:${pctFill}%"></div></div></div>` : ''}
+      `;
+      catDiv.appendChild(div);
+    });
+    list.appendChild(catDiv);
+  });
+}
+
+// ============================================================
+// HINTS
+// ============================================================
+let currentHintTarget = null;
+function showHint() {
+  initAudio();
+  const undiscovered = REACTIONS.filter(r => !STATE.found.has(r.id));
+  if (!undiscovered.length) { floatScore(beakerWrap, '🎉 All found!', '#4fffb0'); return; }
+  currentHintTarget = undiscovered[Math.floor(Math.random()*undiscovered.length)];
+  STATE.hintsRevealed = new Set();
+  renderHintModal();
+  openModal('modal-hint');
+}
+function loadNewHintTarget() {
+  const undiscovered = REACTIONS.filter(r => !STATE.found.has(r.id));
+  if (!undiscovered.length) return;
+  const others = undiscovered.filter(r => r.id !== currentHintTarget?.id);
+  currentHintTarget = (others.length ? others : undiscovered)[Math.floor(Math.random()*(others.length || undiscovered.length))];
+  STATE.hintsRevealed = new Set();
+  renderHintModal();
+}
+function renderHintModal() {
+  const rx = currentHintTarget;
+  if (!rx) return;
+  document.getElementById('hint-target-name').textContent = rx.name;
+  document.getElementById('hint-target-type').textContent = { chemical:'⚗️ Chemical Reaction', physical:'🌈 Physical Change', state:'🌡️ State Change' }[rx.type] || rx.type;
+  
+  const elemRow = document.getElementById('hint-element-row');
+  if (STATE.hintsRevealed.has(2)) {
+    elemRow.innerHTML = rx.ing.map(id => {
+      const ing = INGREDIENTS.find(i => i.id === id);
+      return ing ? `<span class="hint-elem-chip">${ing.emoji} <b>${ing.formula}</b></span>` : '';
+    }).join('<span class="hint-elem-plus">+</span>');
+    elemRow.style.display = 'flex';
+  } else elemRow.style.display = 'none';
+
+  const tiersEl = document.getElementById('hint-tiers');
+  tiersEl.innerHTML = '';
+  const tiers = [
+    { label:'🔍 Clue Level 1 — Vague', cost:'Free', text: rx.hint },
+    { label:'🔬 Clue Level 2 — Chemistry', cost:'Tap to reveal', text: rx.hintsExtra?.[0] || 'Think about chemical properties...' },
+    { label:'⚗️ Clue Level 3 — Almost There', cost:'Tap to reveal', text: rx.hintsExtra?.[1] || `One ingredient is ${INGREDIENTS.find(i=>i.id===rx.ing[0])?.name}.` },
+  ];
+  tiers.forEach((tier, idx) => {
+    const div = document.createElement('div');
+    div.className = 'hint-tier' + (STATE.hintsRevealed.has(idx) ? ' revealed' : '');
+    div.innerHTML = `<div class="hint-tier-header"><span class="hint-tier-label">${tier.label}</span><span class="hint-tier-cost">${STATE.hintsRevealed.has(idx) ? '✓ Revealed' : tier.cost}</span></div><div class="hint-tier-text${STATE.hintsRevealed.has(idx) ? ' shown' : ''}">${tier.text}</div>`;
+    div.onclick = () => {
+      STATE.hintsRevealed.add(idx); div.classList.add('revealed');
+      div.querySelector('.hint-tier-text').classList.add('shown');
+      div.querySelector('.hint-tier-cost').textContent = '✓ Revealed';
+      if (idx === 2) renderHintModal();
+    };
+    tiersEl.appendChild(div);
+  });
+  
+  if (rx.concept) { document.getElementById('hint-concept-text').textContent = rx.concept; document.getElementById('hint-chem-fact').style.display = 'block'; }
+  else document.getElementById('hint-chem-fact').style.display = 'none';
+  const rem = REACTIONS.filter(r=>!STATE.found.has(r.id)).length;
+  document.getElementById('hint-intro').textContent = `${rem} reaction${rem===1?'':'s'} left to discover.`;
+}
+
+// ============================================================
+// INGREDIENT INTERACTION
+// ============================================================
+let lastUsedIngredient = null;
+function addIngredient(ing) {
+  if (STATE.isReacting || STATE.mix.length >= 2) return;
+  initAudio();
+  lastUsedIngredient = ing;
+  STATE.mix.push(ing);
+  SFX.drop();
+  document.querySelectorAll('.ing-btn').forEach(b => b.classList.remove('used'));
+  STATE.mix.forEach(m => document.getElementById(`ing-${m.id}`)?.classList.add('used'));
+  updateSlots();
+  updateBeakerVisual();
+  updateHotIngredients();
+  
+  const qs = document.getElementById('quick-swap-btn');
+  if (qs && STATE.mix.length < 2) qs.classList.add('visible');
+  else if (qs) qs.classList.remove('visible');
+}
+
+function quickSwapLast() {
+  if (!lastUsedIngredient || STATE.isReacting) return;
+  STATE.mix = [];
+  document.querySelectorAll('.ing-btn').forEach(b => b.classList.remove('used'));
+  addIngredient(lastUsedIngredient);
+}
+
+function clearBeaker() {
+  if (STATE.isReacting) return;
+  initAudio();
+  if (STATE.mix.length) SFX.clear();
+  STATE.mix = [];
+  STATE.streak = 0;
+  updateSlots();
+  updateBeakerVisual();
+  updateScoreUI();
+  document.querySelectorAll('.ing-btn').forEach(b => b.classList.remove('used'));
+  cancelAnimationFrame(animFrameId);
+  fxCtx.clearRect(0,0,fxCanvas.width,fxCanvas.height);
+  const qs = document.getElementById('quick-swap-btn');
+  if (qs) qs.classList.remove('visible');
+  updateHotIngredients();
+}
+
+// ============================================================
+// REACTION ENGINE
+// ============================================================
+function triggerReaction() {
+  if (STATE.mix.length !== 2 || STATE.isReacting) return;
+  STATE.isReacting = true;
+  initAudio();
+
+  const comboID = [...STATE.mix.map(i=>i.id)].sort().join('+');
+  let rx = REACTIONS.find(r => [...r.ing].sort().join('+') === comboID);
+
+  if (!rx) {
+    if (STATE.mix[0].id === STATE.mix[1].id) {
+      rx = { id:'_same', icon:'💧', name:'More of the Same', type:'none', color:STATE.mix[0].color, fx:'plop', equation:'A + A → 2A', fact:'Adding more of the same ingredient just makes more of it!', xp:10 };
+    } else {
+      rx = NO_REACTIONS[comboID] || { id:'_unknown', icon:'🔬', name:'No Reaction', type:'none', color:'#1e293b', fx:'plop', equation:'A + B → mixture only', fact:'These don\'t react under normal lab conditions.', xp:10 };
+    }
+  }
+
+  if (rx.fx === 'bigbubbles' || rx.fx === 'foam') SFX.bubble();
+  else if (rx.fx === 'steam' || rx.fx === 'greenfire') SFX.hiss();
+  else if (rx.fx === 'sparkle' || rx.fx === 'galaxy') SFX.sparkle();
+  else if (rx.id.startsWith('_')) SFX.streakBreak();
+  else SFX.plop();
+
+  beakerWrap.classList.add('beaker-shake');
+  setTimeout(() => beakerWrap.classList.remove('beaker-shake'), 450);
+  beakerLiquid.style.background = rx.color;
+  launchParticles(rx.fx, rx.color);
+  setTimeout(() => showResult(rx), 1600);
+}
+
+function showResult(rx) {
+  const isFail = rx.id.startsWith('_');
+  const isNew  = !STATE.found.has(rx.id) && !isFail;
+  STATE.totalReactions++;
+
+  let streakLost = 0;
+  if (isFail) { streakLost = STATE.streak; STATE.streak = 0; }
+  else { STATE.streak++; if (STATE.streak > STATE.maxStreak) STATE.maxStreak = STATE.streak; SFX.success(); }
+
+  let xpGain = rx.xp || 50;
+  if (isFail) xpGain = rx.xp || 0;
+  if (isNew) xpGain = Math.round(xpGain * 1.5);
+  if (!isFail && STATE.streak >= 3) xpGain = Math.round(xpGain * (1 + (STATE.streak-2)*0.1));
+  STATE.xp += xpGain; STATE.score += xpGain;
+
+  if (isNew) STATE.found.add(rx.id);
+  checkLevelUp(); checkChallenges(); updateScoreUI();
+
+  // Handle result modal UI
+  document.getElementById('r-icon').textContent = rx.icon;
+  document.getElementById('r-name').textContent = rx.name;
+  const badge = document.getElementById('r-badge');
+  badge.textContent = { chemical:'⚗️ Chemical Reaction', physical:'🌈 Physical Change', state:'🌡️ State Change' }[rx.type] || rx.type;
+  badge.className = 'result-type-badge ' + ({ chemical:'badge-chemical', physical:'badge-physical', state:'badge-state' }[rx.type] || 'badge-discovery');
+  document.getElementById('r-fact').textContent = rx.fact;
+  
+  const eqEl = document.getElementById('r-equation');
+  if (rx.equation) { eqEl.textContent = rx.equation; eqEl.style.display = 'block'; } else eqEl.style.display = 'none';
+
+  const streakWarn = document.getElementById('r-streak-warn');
+  if (isFail && streakLost > 0) { streakWarn.innerHTML = `<div class="streak-lost-banner">💔 Streak Lost! Your ${streakLost}× streak ended</div>`; streakWarn.style.display = 'block'; }
+  else streakWarn.style.display = 'none';
+
+  document.getElementById('r-xp').innerHTML = isFail ? `<span style="color:var(--muted)">No new discovery</span>` : `+${xpGain} XP <span>earned${STATE.streak>=3?' (streak bonus!)':''}</span>`;
+  document.getElementById('r-new-wrap').innerHTML = isNew ? '<span class="new-badge">✨ New Discovery!</span>' : '';
+
+  if (!isFail) floatScore(beakerWrap, `+${xpGain}`, '#ffd93d');
+  if (!isFail && STATE.streak >= 3) floatScore(beakerWrap, `🔥 x${STATE.streak} Streak!`, '#ff6b9d');
+  if (isFail && streakLost >= 3) floatScore(beakerWrap, `💔 Streak Gone!`, '#ff6b9d');
+
+  // Rarity styling
+  const rarity = (!isFail && xpGain >= 120) ? (xpGain >= 200 ? 'legendary' : (xpGain >= 150 ? 'epic' : 'rare')) : 'common';
+  const rarityWrap = document.getElementById('r-rarity-wrap');
+  const resultBox = document.querySelector('.modal-result');
+  resultBox.classList.remove('rarity-rare','rarity-epic','rarity-legendary');
+  
+  if (rarity !== 'common') {
+    const labels = { legendary: ['✨ LEGENDARY', 'rarity-legendary'], epic: ['💜 EPIC', 'rarity-epic'], rare: ['💙 RARE', 'rarity-rare'] };
+    rarityWrap.innerHTML = `<span class="rarity-badge ${labels[rarity][1]}">${labels[rarity][0]}</span>`;
+    resultBox.classList.add('rarity-' + rarity);
+  } else rarityWrap.innerHTML = '';
+
+  openModal('modal-result');
+  if (isNew) {
+    const jrx = document.getElementById(`jrx-${rx.id}`);
+    if (jrx) jrx.classList.add('found');
+  }
+
+  // Trigger delayed updates
+  setTimeout(() => {
+    updateDailyBanner();
+    checkMilestones();
+    checkTierUnlocks();
+  }, 100);
+}
+
+function closeResult() {
+  closeModal('modal-result');
+  STATE.isReacting = false; STATE.mix = [];
+  updateSlots(); updateBeakerVisual(); updateHotIngredients();
+  document.querySelectorAll('.ing-btn').forEach(b => b.classList.remove('used'));
+  cancelAnimationFrame(animFrameId); fxCtx.clearRect(0,0,fxCanvas.width,fxCanvas.height);
+  const qs = document.getElementById('quick-swap-btn');
+  if (qs) qs.classList.toggle('visible', !!lastUsedIngredient);
+
+  if (STATE.found.size >= TOTAL) {
+    setTimeout(() => {
+      document.getElementById('win-score').textContent = STATE.score.toLocaleString() + ' pts';
+      document.getElementById('win-reactions').textContent = STATE.found.size;
+      document.getElementById('win-streak-max').textContent = STATE.maxStreak;
+      document.getElementById('win-level').textContent = STATE.level;
+      const strip = document.getElementById('win-element-strip');
+      strip.innerHTML = '';
+      INGREDIENTS.forEach((ing, i) => {
+        const el = document.createElement('span');
+        el.className = 'win-elem'; el.textContent = ing.formula; el.style.animationDelay = (i * 60) + 'ms';
+        strip.appendChild(el);
+      });
+      openModal('modal-win');
+      setTimeout(launchWinFireworks, 300);
+    }, 600);
+  }
+}
+
+function checkChallenges() {
+  CHALLENGES.forEach(ch => {
+    if (!STATE.completedChallenges.has(ch.id) && ch.condition(STATE)) {
+      STATE.completedChallenges.add(ch.id); STATE.xp += ch.xp; STATE.score += ch.xp;
+      floatScore(beakerWrap, `🎯 ${ch.name}!`, '#ff6b9d'); checkLevelUp();
+    }
+  });
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openJournal() { buildJournal(); openModal('modal-journal'); }
+function openChallenges() { buildChallenges(); openModal('modal-challenges'); }
+function navSwitch(tab) { document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); document.getElementById('nav-'+tab)?.classList.add('active'); }
+
+// Safely bind event listeners to modals
+['modal-result', 'modal-journal', 'modal-challenges', 'modal-hint', 'modal-tier-locked', 'modal-tier-unlock', 'modal-win', 'modal-daily'].forEach(id => {
+  const modalElement = document.getElementById(id);
+  if (modalElement) {
+    modalElement.addEventListener('click', e => { 
+      if (e.target === modalElement) closeModal(id); 
+    });
+  }
+});
+
+// ============================================================
+// DAILY CHALLENGES & MILESTONES
+// ============================================================
+const DAILY_POOL = [
+  { id:'d_volcano',   icon:'🌋', name:'Classic Eruption', desc:'Find the most famous acid-base reaction in chemistry!', target: g=>g.found.has('volcano'), total:1, xp:400, hint:'Baking Soda + something sour...' },
+  { id:'d_flames',    icon:'🔥', name:'Spectroscopist', desc:'Discover 2 different flame test reactions today.', target: g=>['sodium_flame','potassium_flame','copper_fire','magnesium_burn'].filter(r=>g.found.has(r)).length, total:2, xp:500, hint:'Heat + metals produce coloured flames!' },
+  { id:'d_streak5',   icon:'⚡', name:'Chain Reaction', desc:'Build a streak of 5 successful reactions without dumping.', target: g=>Math.min(g.maxStreak,5), total:5, xp:600, hint:'Keep reacting without hitting DUMP!' },
+];
+let dailyCompleted = false;
+
+function getDailyChallenge() {
+  const d = new Date(); const seed = d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
+  return DAILY_POOL[seed % DAILY_POOL.length];
+}
+let DAILY = getDailyChallenge();
+
+function updateDailyBanner() {
+  const prog = typeof DAILY.target === 'function' ? DAILY.target(STATE) : 0;
+  const pct = Math.min(100, Math.round(prog / DAILY.total * 100));
+  const done = prog >= DAILY.total;
+  document.getElementById('daily-icon').textContent = DAILY.icon;
+  document.getElementById('daily-name').textContent = DAILY.name;
+  document.getElementById('daily-fill').style.width = pct + '%';
+  document.getElementById('daily-pct').textContent = pct + '%';
+  document.getElementById('daily-xp-badge').textContent = '+' + DAILY.xp + ' XP';
+
+  const banner = document.getElementById('daily-banner');
+  if (done && !dailyCompleted) {
+    dailyCompleted = true; banner.classList.add('daily-done');
+    document.getElementById('daily-name').textContent = '✅ ' + DAILY.name + ' — Complete!';
+    floatScore(document.getElementById('daily-banner'), '🎯 Daily Done! +' + DAILY.xp + ' XP', '#ff6b9d');
+    STATE.xp += DAILY.xp; STATE.score += DAILY.xp; checkLevelUp(); updateScoreUI(); if(audioCtx) SFX.levelup();
+  } else if (!done) banner.classList.remove('daily-done');
+}
+
+function openDailyModal() {
+  const prog = typeof DAILY.target === 'function' ? DAILY.target(STATE) : 0;
+  const pct = Math.min(100, Math.round(prog / DAILY.total * 100));
+  document.getElementById('dcc-icon').textContent = DAILY.icon;
+  document.getElementById('dcc-name').textContent = DAILY.name;
+  document.getElementById('dcc-desc').textContent = DAILY.desc + ' 💡 ' + DAILY.hint;
+  document.getElementById('dcc-fill').style.width = pct + '%';
+  document.getElementById('dcc-status').textContent = prog + ' / ' + DAILY.total + (prog >= DAILY.total ? '  ✅ COMPLETE!' : '');
+  document.getElementById('dcc-reward').textContent = prog >= DAILY.total ? '✅ Reward Claimed!' : '+' + DAILY.xp + ' XP on completion';
+  document.getElementById('daily-modal-sub').textContent = new Date().toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'});
+  openModal('modal-daily');
+}
+
+function updateComboMeter() {
+  const streak = STATE.streak;
+  const levels = [
+    { min:0,  max:2,  color:'linear-gradient(90deg,#4fffb0,#00d4aa)',   label:'×1',   mult:1   },
+    { min:3,  max:5,  color:'linear-gradient(90deg,#60a5fa,#8299ff)',   label:'×1.3', mult:1.3 },
+    { min:6,  max:9,  color:'linear-gradient(90deg,#a855f7,#ec4899)',   label:'×1.6', mult:1.6 },
+    { min:10, max:99, color:'linear-gradient(90deg,#ffd93d,#ff9a3c)',   label:'×2.0', mult:2.0 },
+  ];
+  const lv = levels.slice().reverse().find(l => streak >= l.min) || levels[0];
+  const nextLv = levels.find(l => l.min > streak) || levels[levels.length-1];
+  const pct = nextLv === lv ? 100 : Math.min(100, ((streak - lv.min) / (nextLv.min - lv.min)) * 100);
+
+  document.getElementById('combo-fill').style.width = pct + '%';
+  document.getElementById('combo-fill').style.background = lv.color;
+  const mx = document.getElementById('combo-multiplier');
+  mx.textContent = lv.label; mx.style.color = streak >= 10 ? '#ffd93d' : streak >= 6 ? '#a855f7' : streak >= 3 ? '#60a5fa' : 'var(--accent)';
+  if (streak > 0) { mx.classList.remove('pop'); void mx.offsetWidth; mx.classList.add('pop'); }
+
+  const badge = document.getElementById('react-streak-badge');
+  if (streak >= 3) { badge.style.display = 'inline-block'; badge.textContent = lv.label + ' bonus!'; } 
+  else badge.style.display = 'none';
+}
+
+function updateHotIngredients() {
+  const slot1id = STATE.mix[0]?.id;
+  const undiscoveredPartners = new Set();
+  REACTIONS.forEach(rx => {
+    if (!STATE.found.has(rx.id) && slot1id && rx.ing.includes(slot1id)) {
+      rx.ing.forEach(id => { if (id !== slot1id) undiscoveredPartners.add(id); });
+    }
+  });
+  INGREDIENTS.forEach(ing => {
+    const btn = document.getElementById('ing-' + ing.id);
+    if (!btn) return;
+    if (slot1id && undiscoveredPartners.has(ing.id) && !STATE.mix.find(m => m.id === ing.id)) btn.classList.add('hot');
+    else btn.classList.remove('hot');
+  });
+}
+
+const MILESTONES = [
+  { pct: 25,  emoji: '🧪', title: 'Quarter Done!',    sub: "You've discovered 25% of all reactions!" },
+  { pct: 50,  emoji: '⚗️', title: 'Halfway There!',   sub: "50% complete — you're a proper chemist now!" },
+  { pct: 75,  emoji: '🔬', title: 'Almost There!',    sub: "75% discovered — the finish line is in sight!" },
+];
+const shownMilestones = new Set();
+let milestoneTimer;
+
+function checkMilestones() {
+  const pct = Math.round(STATE.found.size / TOTAL * 100);
+  MILESTONES.forEach(ms => {
+    if (pct >= ms.pct && !shownMilestones.has(ms.pct)) {
+      shownMilestones.add(ms.pct); showMilestone(ms);
+    }
+  });
+}
+function showMilestone(ms) {
+  const toast = document.getElementById('milestone-toast');
+  document.getElementById('ms-emoji').textContent = ms.emoji;
+  document.getElementById('ms-title').textContent = ms.title;
+  document.getElementById('ms-sub').textContent = ms.sub;
+  document.getElementById('ms-pct').textContent = ms.pct + '%';
+  toast.classList.remove('fading'); toast.classList.add('visible');
+  clearTimeout(milestoneTimer); milestoneTimer = setTimeout(dismissMilestone, 5000);
+  if(audioCtx) SFX.levelup();
+}
+function dismissMilestone() {
+  const toast = document.getElementById('milestone-toast');
+  toast.classList.add('fading'); setTimeout(() => toast.classList.remove('visible', 'fading'), 400);
+}
+
+// ============================================================
+// TIER UNLOCKS & FIREWORKS
+// ============================================================
+const shownTierUnlocks = new Set([1]);
+let pendingTierUnlock = null;
+const TIER_UNLOCK_DATA = {
+  2: { themeClass: 'tier-2-theme', badge: '⚗️ TIER 2 UNLOCKED', icon: '⚗️', title: 'Advanced Chemistry Lab', subtitle: 'You\'ve mastered the basics!', msg: 'New reagents unlocked!', scienceFact: 'More elements = more complex chemistry.', toastTitle: 'Tier 1 Complete! 🎉', toastSub: 'Advanced Lab unlocking...' },
+  3: { themeClass: 'tier-3-theme', badge: '🔬 TIER 3 UNLOCKED', icon: '🔬', title: 'Expert Chemistry Lab', subtitle: 'Remarkable work!', msg: 'Advanced reagents unlocked!', scienceFact: 'Halogens and radicals await.', toastTitle: 'Tier 2 Complete! 🔬', toastSub: 'Expert Lab unlocking...' },
+  4: { themeClass: 'tier-4-theme', badge: '🧬 TIER 4 UNLOCKED', icon: '🧬', title: 'Master Chemist Lab', subtitle: 'Extraordinary!', msg: 'Elite reagents unlocked!', scienceFact: 'Biochemistry and organic reactions unlocked.', toastTitle: 'Tier 3 Complete! ⚡', toastSub: 'Master Lab unlocking...' },
+};
+
+function showTierCompleteToast(tierNum) {
+  const data = TIER_UNLOCK_DATA[tierNum + 1]; if (!data) return;
+  const toast = document.getElementById('tier-complete-toast');
+  document.getElementById('tct-emoji').textContent = ['🏆','🔬','🧬','⚡'][tierNum - 1] || '🏆';
+  document.getElementById('tct-title').textContent = data.toastTitle;
+  document.getElementById('tct-sub').textContent = data.toastSub;
+  toast.classList.remove('fading'); toast.classList.add('visible');
+  setTimeout(() => { toast.classList.add('fading'); setTimeout(() => toast.classList.remove('visible','fading'), 400); }, 3500);
+}
+
+let tierFwAnimId;
+function launchTierUnlockFireworks(themeClass) {
+  const canvas = document.getElementById('tier-unlock-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width  = canvas.offsetWidth || 380;
+  canvas.height = canvas.offsetHeight || 300;
+  const colorMap = {
+    'tier-2-theme': ['#60a5fa','#818cf8','#c4b5fd','#e0e7ff'],
+    'tier-3-theme': ['#e879f9','#a855f7','#f0abfc','#d8b4fe'],
+    'tier-4-theme': ['#fb7185','#f43f5e','#fda4af','#fecdd3'],
+  };
+  const colors = colorMap[themeClass] || ['#4fffb0','#ffd93d','#ff6b9d','#8299ff'];
+  const parts = [];
+  for (let i=0;i<80;i++) {
+    const angle = Math.random()*Math.PI*2, speed = Math.random()*5+2;
+    parts.push({ x:canvas.width/2+(Math.random()-.5)*canvas.width*.6, y:canvas.height/2,
+      vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed-3,
+      color:colors[Math.floor(Math.random()*colors.length)], size:Math.random()*4+2, life:1, decay:Math.random()*.015+.008 });
+  }
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    let alive=false;
+    parts.forEach(p => {
+      if(p.life<=0)return; alive=true;
+      p.x+=p.vx; p.y+=p.vy; p.vy+=.08; p.life-=p.decay;
+      ctx.save(); ctx.globalAlpha=Math.max(0,p.life);
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+      ctx.fillStyle=p.color; ctx.shadowColor=p.color; ctx.shadowBlur=8; ctx.fill();
+      ctx.restore();
+    });
+    if(alive) tierFwAnimId=requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+function showTierUnlockModal(tierNum) {
+  const data = TIER_UNLOCK_DATA[tierNum]; const tier = TIER_DEFS.find(t => t.num === tierNum);
+  if (!data || !tier) return;
+  const newIngs = document.getElementById('tu-new-ings'); newIngs.innerHTML = '';
+  tier.ids.forEach(id => {
+    const ing = INGREDIENTS.find(i => i.id === id); if (!ing) return;
+    const chip = document.createElement('div'); chip.className = 'tu-ing-chip';
+    chip.innerHTML = `<span class="tu-emoji">${ing.emoji}</span><span class="tu-formula">${ing.formula}</span>`;
+    newIngs.appendChild(chip);
+  });
+
+  const box = document.getElementById('tier-unlock-box'); box.className = 'modal-box modal-tier-unlock ' + data.themeClass;
+  document.getElementById('tu-icon').textContent = data.icon;
+  document.getElementById('tu-tier-badge').textContent = data.badge;
+  document.getElementById('tu-title').textContent = data.title;
+  document.getElementById('tu-msg').textContent = data.msg;
+  SFX.levelup(); openModal('modal-tier-unlock');
+  launchTierUnlockFireworks(data.themeClass);
+}
+
+function closeTierUnlock() {
+  closeModal('modal-tier-unlock');
+  cancelAnimationFrame(tierFwAnimId);
+  if (pendingTierUnlock) { buildShelfWithTiers(); pendingTierUnlock = null; }
+}
+
+function checkTierUnlocks() {
+  const nowUnlocked = getUnlockedTierNum();
+  for (let t = 2; t <= nowUnlocked; t++) {
+    if (!shownTierUnlocks.has(t)) {
+      shownTierUnlocks.add(t); showTierCompleteToast(t - 1); pendingTierUnlock = t;
+      setTimeout(() => showTierUnlockModal(t), 1500); break;
+    }
+  }
+}
+
+// ============================================================
+// WIN ANIMATION
+// ============================================================
+let winFwAnimId;
+function launchWinFireworks() {
+  const canvas = document.getElementById('win-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width  = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+
+  const colors = ['#4fffb0','#ffd93d','#ff6b9d','#8299ff','#ff9a3c','#00d4aa','#e879f9','#60a5fa'];
+  const shells = [];
+
+  function Shell(x, y) {
+    this.x = x; this.y = canvas.height;
+    this.tx = x; this.ty = y;
+    this.particles = [];
+    this.exploded = false;
+    this.vy = -12 - Math.random() * 6;
+    this.color = colors[Math.floor(Math.random()*colors.length)];
+  }
+  Shell.prototype.update = function() {
+    if (!this.exploded) {
+      this.y += this.vy;
+      this.vy += 0.3;
+      if (this.y <= this.ty) { this.explode(); }
+    } else {
+      this.particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy; p.vy += 0.12; p.life -= 0.018; p.vx *= 0.98;
+      });
+      this.particles = this.particles.filter(p => p.life > 0);
+    }
+  };
+  Shell.prototype.explode = function() {
+    this.exploded = true;
+    const n = 55 + Math.floor(Math.random()*30);
+    for (let i=0;i<n;i++) {
+      const ang = (Math.PI*2/n)*i + Math.random()*0.2;
+      const spd = 2 + Math.random()*5;
+      this.particles.push({ x:this.x, y:this.y, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd, life:1, color:this.color, r: 2+Math.random()*2 });
+    }
+    if (audioCtx) [600,800,1000,1200,1400].forEach((f,i)=>setTimeout(()=>tone(f,'triangle',0.1,0.04+Math.random()*0.04),i*40));
+  };
+  Shell.prototype.draw = function() {
+    if (!this.exploded) {
+      ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI*2);
+      ctx.fillStyle = this.color; ctx.shadowColor = this.color; ctx.shadowBlur = 8; ctx.fill();
+    } else {
+      this.particles.forEach(p => {
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        ctx.fillStyle = p.color; ctx.shadowColor = p.color; ctx.shadowBlur = 6; ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+    }
+  };
+
+  let t = 0;
+  function frame() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    t++;
+    if (t < 180 && t % 18 === 0) {
+      shells.push(new Shell(
+        canvas.width * (0.15 + Math.random()*0.7),
+        canvas.height * (0.05 + Math.random()*0.45)
+      ));
+    }
+    shells.forEach(s => { s.update(); s.draw(); });
+    for (let i = shells.length-1; i>=0; i--) {
+      if (shells[i].exploded && shells[i].particles.length === 0) shells.splice(i,1);
+    }
+    if (t < 220 || shells.length > 0) winFwAnimId = requestAnimationFrame(frame);
+  }
+  cancelAnimationFrame(winFwAnimId);
+  frame();
+}
+
+// ============================================================
+// BOOTSTRAP
+// ============================================================
+function resetGame() {
+  STATE = { mix:[], found:new Set(), score:0, xp:0, level:1, streak:0, maxStreak:0, totalReactions:0, completedChallenges:new Set(), isReacting:false, lastResult:null, hintTarget:null, hintsRevealed:new Set() };
+  dailyCompleted = false; lastUsedIngredient = null; shownMilestones.clear(); shownTierUnlocks.clear(); shownTierUnlocks.add(1); pendingTierUnlock = null;
+  cancelAnimationFrame(winFwAnimId);
+  closeModal('modal-win');
+  buildShelfWithTiers(); updateSlots(); updateBeakerVisual(); updateScoreUI(); updateDailyBanner();
+  const qs = document.getElementById('quick-swap-btn'); if (qs) qs.classList.remove('visible');
+}
+
+function startGame() {
+  const screen = document.getElementById('start-screen');
+  screen.classList.add('hiding'); setTimeout(() => screen.style.display = 'none', 520);
+}
+
+// Dev cheat: 5 taps on logo to win
+(function(){
+  let taps = 0, timer = null; const logo = document.querySelector('.logo');
+  if (!logo) return;
+  logo.addEventListener('click', () => {
+    taps++; clearTimeout(timer);
+    if (taps >= 5) {
+      taps = 0; REACTIONS.forEach(r => STATE.found.add(r.id));
+      STATE.score = 99999; STATE.xp = 9999; STATE.level = 20; STATE.maxStreak = 20; STATE.totalReactions = REACTIONS.length; updateScoreUI();
+      setTimeout(closeResult, 1000); // Trigger win
+    } else timer = setTimeout(() => taps = 0, 2000);
+  });
+})();
+
+window.addEventListener('DOMContentLoaded', () => {
+  buildShelfWithTiers();
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  updateScoreUI();
+});
+</script>
+</body>
+</html>
