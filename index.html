@@ -1,16 +1,76 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>My Mini Games</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Games Hub</title>
+    <style>
+        /* Base page styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a2e; /* Dark arcade background */
+            color: #ffffff;
+            margin: 0;
+            padding: 50px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Header styling */
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Container to hold the game cards */
+        .game-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            max-width: 900px;
+        }
+
+        /* Styling for each individual game button/card */
+        .game-card {
+            background-color: #16213e;
+            border: 2px solid #0f3460;
+            border-radius: 12px;
+            padding: 20px 40px;
+            text-decoration: none;
+            color: #e94560; /* Accent color */
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            min-width: 150px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Cool hover effect when the mouse goes over a card */
+        .game-card:hover {
+            transform: translateY(-5px); /* Moves it up slightly */
+            background-color: #e94560;
+            color: #ffffff;
+            box-shadow: 0 8px 15px rgba(233, 69, 96, 0.5); /* Glowing shadow */
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome to My Mini Games Project!</h1>
-    <ul>
-        <li><a href="Body Anatomy/">Body Anatomy</a></li>
-        <li><a href="Deep dive/">Deep Dive</a></li>
-        <li><a href="Reaction-Lab/">Reaction Lab</a></li>
-        <li><a href="RoboBug/">RoboBug</a></li>
-        <li><a href="StarSpell/">StarSpell</a></li>
-    </ul>
+
+    <h1>🎮 Mini Games Hub 🎮</h1>
+
+    <div class="game-grid">
+        <a href="Body%20Anatomy/" class="game-card">Body Anatomy</a>
+        <a href="Deep%20dive/" class="game-card">Deep Dive</a>
+        <a href="Reaction-Lab/" class="game-card">Reaction Lab</a>
+        <a href="RoboBug/" class="game-card">RoboBug</a>
+        <a href="StarSpell/" class="game-card">StarSpell</a>
+    </div>
+
 </body>
 </html>
